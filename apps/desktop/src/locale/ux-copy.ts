@@ -412,6 +412,27 @@ export const ux = {
       "ببینید چقدر فروخته‌اید، چقدر پول دارید و چه بدهی/طلبی دارید.",
     vouchers:
       "سند دستی حسابداری — فقط اگر می‌دانید بدهکار و بستانکار چیست.",
+    accounts:
+      "درخت سرفصل‌ها — معمولاً فقط حسابدار به آن نیاز دارد.",
+    ledger: "ریز گردش یک حساب از اول تا امروز.",
+    trialBalance: "کنترل توازن کل دفاتر — برای حسابرسی.",
+    bankAccounts:
+      "هر حساب بانکی برای دریافت و پرداخت از طریق بانک تعریف کنید.",
+    units: "واحد اندازه‌گیری کالا: عدد، کیلو، بسته و …",
+    fiscal: "بستن سال مالی و جلوگیری از ویرایش گذشته.",
+    weightAdjustments: "کسر یا اضافه وزن در فاکتور — برای کالای وزنی.",
+  },
+
+  reportsMobile: {
+    profitLoss: "سود و زیان",
+    balanceSheet: "ترازنامه",
+    partyStatement: "ریز حساب اشخاص",
+    vat: "مالیات بر ارزش افزوده",
+    cashFlow: "گردش نقد",
+    checks: "گزارش چک",
+    kardex: "کارتکس کالا",
+    ownerStatus: "وضعیت مالک",
+    partners: "مانده شرکا",
   },
 
   onboarding: {
@@ -433,6 +454,50 @@ export const ux = {
       reports:
         "از بخش گزارش ببینید چقدر فروش داشتید و چقدر پول نقد دارید. نگران اشتباه نباشید — همیشه می‌توانید ویرایش یا حذف کنید.",
     },
+  },
+
+  checkWizard: {
+    stepKind: "نوع چک",
+    stepDetails: "مبلغ و سررسید",
+    stepDrawer: "صادرکننده",
+    stepReview: "بررسی",
+    received: "چک گرفتم",
+    payable: "چک دادم",
+    customer: "مشتری",
+    supplier: "تأمین‌کننده",
+    sayyad: "شماره صیاد (۱۶ رقم)",
+    issueDate: "تاریخ صدور",
+    dueDate: "تاریخ سررسید",
+    amount: "مبلغ",
+    nationalId: "کد ملی صادرکننده",
+    mobile: "موبایل",
+    bank: "بانک",
+    branchOptional: "شعبه (اختیاری)",
+    confirmSave: "ثبت چک",
+    saved: "چک ثبت شد",
+    saveError: "ثبت چک ناموفق بود",
+    summaryParty: "طرف‌حساب",
+    summaryAmount: "مبلغ",
+    summaryDue: "سررسید",
+  },
+
+  returnWizard: {
+    stepReason: "دلیل مرجوعی",
+    stepItems: "کالاها",
+    stepReview: "بررسی",
+    reasonLabel: "چرا مرجوع می‌کنید؟",
+    reasonPlaceholder: "مثلاً: کالای معیوب، اشتباه در سفارش",
+    descriptionOptional: "شرح تکمیلی (اختیاری)",
+    qtyLabel: "تعداد مرجوعی",
+    remaining: "باقیمانده",
+    previewCta: "مشاهده پیش‌نمایش",
+    previewTitle: "آماده ثبت مرجوعی",
+    previewHint: "با تأیید، فاکتور مرجوعی و سند ثبت می‌شوند",
+    confirmSave: "تأیید و ثبت",
+    saved: "مرجوعی ثبت شد",
+    previewError: "پیش‌نمایش ناموفق بود",
+    saveError: "ثبت مرجوعی ناموفق بود",
+    notReturnable: "این فاکتور قابل مرجوعی نیست",
   },
 
   invoiceWizard: {

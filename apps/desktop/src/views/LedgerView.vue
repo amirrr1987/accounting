@@ -11,8 +11,11 @@ import type { Account, LedgerReport } from "@hesabyar/shared";
 import { fetchAccounts, fetchLedger } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { exportLedgerExcel, exportLedgerPdf } from "@/lib/ledger-export";
+import PageHeader from "@/components/PageHeader.vue";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("ledger");
 const accounts = ref<Account[]>([]);
 const accountId = ref<string | null>(null);
 const fromJalali = ref("");
@@ -78,35 +81,37 @@ function onPdf(): void {
 </script>
 
 <template>
-  <div class="p-6 space-y-4" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'p-6 space-y-4'" dir="rtl">
     <Toast />
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">دفتر کل</h1>
-        <p class="text-slate-600 text-sm mt-1">
-          گردش حساب با ماندهٔ متوالی
-        </p>
-      </div>
-      <div class="flex gap-2">
-        <Button
-          label="Excel"
-          icon="pi pi-file-excel"
-          severity="success"
-          outlined
-          :disabled="!report"
-          @click="onExcel"
-        />
-        <Button
-          label="PDF / چاپ"
-          icon="pi pi-print"
-          severity="secondary"
-          outlined
-          :disabled="!report"
-          @click="onPdf"
-        />
-      </div>
-    </div>
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
+      <template #actions>
+        <div class="flex gap-2">
+          <Button
+            label="Excel"
+            icon="pi pi-file-excel"
+            severity="success"
+            outlined
+            class="min-h-11"
+            :disabled="!report"
+            @click="onExcel"
+          />
+          <Button
+            label="PDF"
+            icon="pi pi-print"
+            severity="secondary"
+            outlined
+            class="min-h-11"
+            :disabled="!report"
+            @click="onPdf"
+          />
+        </div>
+      </template>
+    </PageHeader>
 
     <div class="grid md:grid-cols-4 gap-3 items-end">
       <div class="flex flex-col gap-2 md:col-span-2">

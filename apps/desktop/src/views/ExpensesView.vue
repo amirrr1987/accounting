@@ -44,11 +44,21 @@ import {
 } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("expenses");
+
+const expenseTabIndex = ref(0);
+const expenseTabOptions = [
+  { label: "هزینه‌ها", value: 0 },
+  { label: "برداشت شخصی", value: 1 },
+  { label: "خلاصه دوره", value: 2 },
+];
 
 const categories = ref<ExpenseCategory[]>([]);
 const expenses = ref<Expense[]>([]);
@@ -302,13 +312,26 @@ async function saveOwner(): Promise<void> {
 
 <template>
   <Toast />
-  <div class="flex flex-col gap-4 p-4 md:p-6">
+  <div
+    :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'flex flex-col gap-4 p-4 md:p-6'"
+    dir="rtl"
+  >
     <PageHeader
-      :title="ux.nav.expenses"
-      subtitle="ثبت هزینه‌های جاری، دستمزد کارگر و برداشت شخصی مالک"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     />
 
-    <TabView>
+    <Select
+      v-if="isMobile"
+      v-model="expenseTabIndex"
+      :options="expenseTabOptions"
+      option-label="label"
+      option-value="value"
+      class="w-full"
+    />
+
+    <TabView v-if="!isMobile">
       <TabPanel header="هزینه‌ها">
         <div class="mb-4 flex justify-end">
           <Button
@@ -416,6 +439,91 @@ async function saveOwner(): Promise<void> {
         </template>
       </TabPanel>
     </TabView>
+
+    <template v-else>
+      <div v-if="expenseTabIndex === 0" class="space-y-3">
+        <div class="flex justify-end">
+          <Button
+            label="هزینه جدید"
+            icon="pi pi-plus"
+            class="min-h-11"
+            @click="openExpenseDialog"
+          />
+        </div>
+        <EmptyState
+          v-if="!loading && expenses.length === 0"
+          title="هنوز هزینه‌ای ثبت نشده"
+          icon="pi pi-wallet"
+          action-label="هزینه جدید"
+          @action="openExpenseDialog"
+        />
+        <ul v-else class="list-none m-0 p-0 space-y-2">
+          <li v-for="row in expenses" :key="row.id">
+            <MobileListCard
+              :title="row.categoryName"
+              :subtitle="`${row.dateJalali} · ${row.description || '—'}`"
+              :meta="formatMoneyFa(row.amount)"
+            />
+          </li>
+        </ul>
+      </div>
+
+      <div v-else-if="expenseTabIndex === 1" class="space-y-3">
+        <div class="flex flex-wrap gap-2 justify-end">
+          <Button
+            label="مالک جدید"
+            icon="pi pi-user-plus"
+            severity="secondary"
+            outlined
+            class="min-h-11"
+            @click="ownerDialog = true"
+          />
+          <Button
+            label="برداشت جدید"
+            icon="pi pi-plus"
+            class="min-h-11"
+            @click="openDrawingDialog"
+          />
+        </div>
+        <ul class="list-none m-0 p-0 space-y-2">
+          <li v-for="row in drawings" :key="row.id">
+            <MobileListCard
+              :title="row.ownerName"
+              :subtitle="row.dateJalali"
+              :meta="formatMoneyFa(row.amount)"
+              meta-severity="warn"
+            />
+          </li>
+        </ul>
+      </div>
+
+      <div v-else class="space-y-3">
+        <div class="flex flex-wrap items-end gap-3">
+          <JalaliDatePicker v-model="summaryFrom" label="از تاریخ" />
+          <JalaliDatePicker v-model="summaryTo" label="تا تاریخ" />
+          <Button
+            label="بروزرسانی"
+            icon="pi pi-refresh"
+            class="min-h-11"
+            @click="loadSummary"
+          />
+        </div>
+        <template v-if="summary">
+          <p class="text-lg font-semibold m-0">
+            جمع کل: {{ formatMoneyFa(summary.grandTotal) }}
+          </p>
+          <ul class="list-none m-0 p-0 space-y-2">
+            <li v-for="row in summary.rows" :key="row.categoryName">
+              <MobileListCard
+                :title="row.categoryName"
+                :subtitle="`${row.count} مورد`"
+                :meta="formatMoneyFa(row.total)"
+              />
+            </li>
+          </ul>
+        </template>
+      </div>
+    </template>
 
     <Dialog
       v-model:visible="expenseDialog"

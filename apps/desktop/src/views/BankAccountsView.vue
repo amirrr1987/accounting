@@ -16,9 +16,12 @@ import {
 } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("bankAccounts");
 const rows = ref<BankAccount[]>([]);
 const loading = ref(false);
 const dialogVisible = ref(false);
@@ -106,11 +109,12 @@ async function deactivate(row: BankAccount): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
-      title="حساب‌های بانکی"
-      subtitle="هر حساب بانکی یک سرفصل تفصیلی زیر «موجودی نقد و بانک» دارد"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     >
       <template #actions>
         <Button
@@ -123,7 +127,31 @@ async function deactivate(row: BankAccount): Promise<void> {
     </PageHeader>
 
     <div class="hy-surface overflow-hidden">
+      <EmptyState
+        v-if="!loading && rows.length === 0"
+        icon="pi pi-building-columns"
+        title="حساب بانکی ثبت نشده"
+        description="برای دریافت و پرداخت از طریق بانک، ابتدا حساب را تعریف کنید"
+        action-label="حساب جدید"
+        @action="openCreate"
+      />
+
+      <ul
+        v-else-if="isMobile"
+        class="list-none m-0 p-0 divide-y divide-[var(--hy-border)]"
+      >
+        <li v-for="row in rows" :key="row.id">
+          <MobileListCard
+            :title="row.name"
+            :subtitle="`${row.bankName} · ${row.coaAccountCode}`"
+            :meta="formatMoneyFa(row.currentBalance)"
+            :meta-severity="row.isActive ? 'success' : 'secondary'"
+          />
+        </li>
+      </ul>
+
       <DataTable
+        v-else
         :value="rows"
         :loading="loading"
         striped-rows

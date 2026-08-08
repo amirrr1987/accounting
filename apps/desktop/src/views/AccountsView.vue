@@ -28,9 +28,12 @@ import {
   ACCOUNT_TYPE_SEVERITY,
 } from "@/lib/account-labels";
 import AccountFormDrawer from "@/components/AccountFormDrawer.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
 const confirm = useConfirm();
+const { copy: pageCopy, isMobile } = usePageCopy("accounts");
 
 const nodes = ref<AccountTreeNode[]>([]);
 const flatAccounts = ref<Account[]>([]);
@@ -153,19 +156,19 @@ function confirmRemove(account: Account): void {
 </script>
 
 <template>
-  <div class="p-6 space-y-4" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'p-6 space-y-4'" dir="rtl">
     <Toast />
     <ConfirmDialog />
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">سرفصل حساب‌ها</h1>
-        <p class="text-slate-600 text-sm mt-1">
-          درخت حساب‌های استاندارد ایران
-        </p>
-      </div>
-      <Button label="حساب جدید" icon="pi pi-plus" @click="openCreate" />
-    </div>
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
+      <template #actions>
+        <Button label="حساب جدید" icon="pi pi-plus" class="min-h-11" @click="openCreate" />
+      </template>
+    </PageHeader>
 
     <div class="flex gap-2 items-center max-w-md">
       <span class="p-input-icon-right w-full relative">

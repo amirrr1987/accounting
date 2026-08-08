@@ -23,7 +23,11 @@ import {
   previewReturnInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { useIsMobileRef } from "@/composables/useViewport";
+import InvoiceReturnFormMobile from "@/views/invoice/InvoiceReturnFormMobile.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
+
+const isMobile = useIsMobileRef();
 
 const route = useRoute();
 const router = useRouter();
@@ -146,7 +150,9 @@ async function confirmSave(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-6 space-y-4 max-w-5xl mx-auto" dir="rtl">
+  <InvoiceReturnFormMobile v-if="isMobile" />
+
+  <div v-else class="p-6 space-y-4 max-w-5xl mx-auto" dir="rtl">
     <Toast />
 
     <div class="flex flex-wrap items-center justify-between gap-3">

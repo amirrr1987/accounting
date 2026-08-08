@@ -38,13 +38,23 @@ import {
 } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import HyDoughnutChart from "@/components/charts/HyDoughnutChart.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
 import { CHART_COLORS } from "@/lib/chart-theme";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("partners");
+
+const partnerTabIndex = ref(0);
+const partnerTabOptions = [
+  { label: "فهرست شرکا", value: 0 },
+  { label: "تفکیک موجودی", value: 1 },
+  { label: "برداشت‌ها", value: 2 },
+];
 const partners = ref<Partner[]>([]);
 const balances = ref<PartnerBalanceReport | null>(null);
 const drawings = ref<PartnerDrawing[]>([]);
@@ -262,10 +272,14 @@ async function saveDrawing(): Promise<void> {
 
 <template>
   <Toast />
-  <div class="hy-page flex flex-col gap-4 p-4 md:p-6" dir="rtl">
+  <div
+    :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'hy-page flex flex-col gap-4 p-4 md:p-6'"
+    dir="rtl"
+  >
     <PageHeader
-      :title="ux.nav.partners"
-      subtitle="تعریف شرکا، سهم مالکیت و تفکیک موجودی"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     />
 
     <div class="flex flex-wrap items-center gap-2">
@@ -273,8 +287,9 @@ async function saveDrawing(): Promise<void> {
         :value="`مجموع سهم: ${shareTotal.toFixed(1)}٪`"
         :severity="Math.abs(shareTotal - 100) < 0.01 ? 'success' : 'warn'"
       />
-      <Button label="شریک جدید" icon="pi pi-plus" @click="openCreate" />
+      <Button label="شریک جدید" icon="pi pi-plus" class="min-h-11" @click="openCreate" />
       <Button
+        v-if="!isMobile"
         label="برداشت شریک"
         icon="pi pi-wallet"
         severity="secondary"
@@ -283,7 +298,16 @@ async function saveDrawing(): Promise<void> {
       />
     </div>
 
-    <TabView>
+    <Select
+      v-if="isMobile"
+      v-model="partnerTabIndex"
+      :options="partnerTabOptions"
+      option-label="label"
+      option-value="value"
+      class="w-full"
+    />
+
+    <TabView v-if="!isMobile">
       <TabPanel header="فهرست شرکا">
         <DataTable :value="partners" :loading="loading" striped-rows paginator :rows="10">
           <Column field="name" header="نام" />
@@ -389,6 +413,70 @@ async function saveDrawing(): Promise<void> {
         </DataTable>
       </TabPanel>
     </TabView>
+
+    <template v-else>
+      <div v-if="partnerTabIndex === 0" class="space-y-2">
+        <EmptyState
+          v-if="!loading && partners.length === 0"
+          title="شریکی تعریف نشده"
+          description="شرکا را با سهم مالکیت (مجموع ۱۰۰٪) تعریف کنید"
+          icon="pi pi-users"
+          action-label="شریک جدید"
+          @action="openCreate"
+        />
+        <ul v-else class="list-none m-0 p-0 space-y-2">
+          <li v-for="row in partners" :key="row.id">
+            <MobileListCard
+              :title="row.name"
+              :subtitle="`سهم ${row.sharePercent}٪`"
+              :meta="row.isActive ? 'فعال' : 'غیرفعال'"
+              :meta-severity="row.isActive ? 'success' : 'secondary'"
+              @click="openEdit(row)"
+            />
+          </li>
+        </ul>
+      </div>
+
+      <div v-else-if="partnerTabIndex === 1 && balances" class="space-y-3">
+        <div class="flex flex-wrap gap-3 items-end">
+          <JalaliDatePicker v-model="balanceFrom" label="از" />
+          <JalaliDatePicker v-model="balanceTo" label="تا" />
+          <Button label="محاسبه" icon="pi pi-calculator" class="min-h-11" @click="loadBalances" />
+        </div>
+        <p class="text-sm text-[var(--hy-muted)] m-0">
+          خالص: {{ formatMoneyFa(balances.netEquity) }}
+        </p>
+        <ul class="list-none m-0 p-0 space-y-2">
+          <li v-for="row in balances.rows" :key="row.partnerId">
+            <MobileListCard
+              :title="row.partnerName"
+              :subtitle="`سهم ${row.sharePercent}٪`"
+              :meta="formatMoneyFa(row.netBalance)"
+            />
+          </li>
+        </ul>
+      </div>
+
+      <div v-else class="space-y-3">
+        <Button
+          label="برداشت شریک"
+          icon="pi pi-wallet"
+          outlined
+          class="w-full min-h-11"
+          @click="openDrawingDialog"
+        />
+        <ul class="list-none m-0 p-0 space-y-2">
+          <li v-for="row in drawings" :key="row.id">
+            <MobileListCard
+              :title="row.partnerName"
+              :subtitle="row.dateJalali"
+              :meta="formatMoneyFa(row.amount)"
+              meta-severity="warn"
+            />
+          </li>
+        </ul>
+      </div>
+    </template>
 
     <Dialog v-model:visible="dialogVisible" :header="editing ? 'ویرایش شریک' : 'شریک جدید'" modal class="w-full max-w-md">
       <div class="flex flex-col gap-3">

@@ -12,9 +12,12 @@ import { formatMoneyFa } from "@/lib/money";
 import { printTrialBalance } from "@/lib/trial-balance-print";
 import { exportTrialBalanceExcel } from "@/lib/trial-balance-export";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("trialBalance");
 const asOfJalali = ref(todayJalali());
 const loading = ref(false);
 const report = ref<TrialBalanceReport | null>(null);
@@ -49,33 +52,37 @@ function onPrint(): void {
 </script>
 
 <template>
-  <div class="p-6 space-y-4" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'p-6 space-y-4'" dir="rtl">
     <Toast />
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">{{ ux.trialBalance.title }}</h1>
-        <p class="text-slate-600 text-sm mt-1">
-          {{ ux.trialBalance.subtitle }} — سطوح گروه / کل / معین
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <Button
-          :label="ux.trialBalance.exportExcel"
-          icon="pi pi-file-excel"
-          outlined
-          :disabled="!report"
-          @click="onExportExcel"
-        />
-        <Button
-          label="چاپ / PDF"
-          icon="pi pi-print"
-          outlined
-          :disabled="!report"
-          @click="onPrint"
-        />
-      </div>
-    </div>
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
+      <template #actions>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            :label="ux.trialBalance.exportExcel"
+            icon="pi pi-file-excel"
+            severity="success"
+            outlined
+            class="min-h-11"
+            :disabled="!report"
+            @click="onExportExcel"
+          />
+          <Button
+            label="چاپ / PDF"
+            icon="pi pi-print"
+            severity="secondary"
+            outlined
+            class="min-h-11"
+            :disabled="!report"
+            @click="onPrint"
+          />
+        </div>
+      </template>
+    </PageHeader>
 
     <div class="flex flex-wrap gap-3 items-end">
       <JalaliDatePicker v-model="asOfJalali" :label="ux.trialBalance.asOf" />

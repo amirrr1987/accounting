@@ -21,5 +21,8 @@ describe("ux copy", () => {
     expect(ux.onboarding.steps.welcome).toBeTruthy();
     expect(ux.invoiceWizard.sale).toBe("فروختم");
     expect(ux.invoiceWizard.stockWarning("گندم", 5)).toMatch(/5/);
+    expect(ux.checkWizard.received).toBe("چک گرفتم");
+    expect(ux.returnWizard.stepReason).toBeTruthy();
+    expect(ux.reportsMobile.profitLoss).toBeTruthy();
   });
 });

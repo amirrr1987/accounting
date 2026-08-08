@@ -30,8 +30,10 @@ import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("weightAdjustments");
 const rows = ref<WeightAdjustment[]>([]);
 const products = ref<Product[]>([]);
 const purchaseInvoices = ref<Invoice[]>([]);
@@ -126,11 +128,12 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
-      title="کسر بار / اضافه بار"
-      subtitle="تعدیل وزن یا مقدار کالا پس از خرید (مثلاً شکستگی گردو یا بو دادن آجیل)"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     >
       <template #actions>
         <Button

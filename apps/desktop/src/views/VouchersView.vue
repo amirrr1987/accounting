@@ -13,6 +13,7 @@ import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
 const router = useRouter();
@@ -65,6 +66,21 @@ onMounted(async () => {
         :action-label="ux.vouchers.emptyCta"
         @action="router.push('/vouchers/new')"
       />
+
+      <ul
+        v-else-if="isMobile"
+        class="list-none m-0 p-0 space-y-2"
+      >
+        <li v-for="row in vouchers" :key="row.id">
+          <MobileListCard
+            :title="row.description || `سند ${row.number}`"
+            :subtitle="`${row.number} · ${row.dateJalali}`"
+            :meta="formatMoneyFa(row.totalDebit)"
+            meta-severity="info"
+            @click="router.push(`/vouchers/${row.id}`)"
+          />
+        </li>
+      </ul>
 
       <DataTable
         v-else

@@ -15,9 +15,11 @@ import {
 } from "@/lib/api";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("fiscal");
 const years = ref<FiscalYear[]>([]);
 const loading = ref(false);
 const closeThrough = ref(todayJalali());
@@ -69,9 +71,13 @@ async function reopen(row: FiscalYear): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
-    <PageHeader :title="ux.fiscal.title" :subtitle="ux.fiscal.subtitle" />
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    />
 
     <div class="hy-surface p-4 mb-4 flex flex-wrap gap-3 items-end">
       <JalaliDatePicker v-model="closeThrough" :label="ux.fiscal.closeThrough" />

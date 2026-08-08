@@ -13,7 +13,14 @@ export type PageCopyKey =
   | "checks"
   | "expenses"
   | "partners"
-  | "settings";
+  | "settings"
+  | "accounts"
+  | "ledger"
+  | "trialBalance"
+  | "bankAccounts"
+  | "units"
+  | "fiscal"
+  | "weightAdjustments";
 
 type PageCopy = {
   title: string;
@@ -93,6 +100,55 @@ const PAGE_COPY: Record<PageCopyKey, PageCopy> = {
     subtitle: ux.settings.subtitle,
     subtitleSimple: ux.navHints.settings,
     hint: ux.navHints.settings,
+  },
+  accounts: {
+    title: ux.nav.accounts,
+    titleSimple: ux.nav.accountsSimple,
+    subtitle: ux.navHints.accounts,
+    subtitleSimple: ux.pageHints.accounts,
+    hint: ux.pageHints.accounts,
+  },
+  ledger: {
+    title: ux.nav.ledger,
+    titleSimple: ux.nav.ledgerSimple,
+    subtitle: ux.navHints.ledger,
+    subtitleSimple: ux.pageHints.ledger,
+    hint: ux.pageHints.ledger,
+  },
+  trialBalance: {
+    title: ux.trialBalance.title,
+    titleSimple: ux.nav.trialBalanceSimple,
+    subtitle: ux.trialBalance.subtitle,
+    subtitleSimple: ux.pageHints.trialBalance,
+    hint: ux.pageHints.trialBalance,
+  },
+  bankAccounts: {
+    title: ux.nav.bankAccounts,
+    titleSimple: ux.nav.bankAccountsSimple,
+    subtitle: ux.navHints.bankAccounts,
+    subtitleSimple: ux.pageHints.bankAccounts,
+    hint: ux.pageHints.bankAccounts,
+  },
+  units: {
+    title: ux.nav.units,
+    titleSimple: ux.nav.unitsSimple,
+    subtitle: ux.navHints.units,
+    subtitleSimple: ux.pageHints.units,
+    hint: ux.pageHints.units,
+  },
+  fiscal: {
+    title: ux.nav.fiscal,
+    titleSimple: ux.nav.fiscalSimple,
+    subtitle: ux.navHints.fiscal,
+    subtitleSimple: ux.pageHints.fiscal,
+    hint: ux.pageHints.fiscal,
+  },
+  weightAdjustments: {
+    title: ux.nav.weightAdjustments,
+    titleSimple: ux.nav.weightAdjustmentsSimple,
+    subtitle: ux.navHints.weightAdjustments,
+    subtitleSimple: ux.pageHints.weightAdjustments,
+    hint: ux.pageHints.weightAdjustments,
   },
 };
 

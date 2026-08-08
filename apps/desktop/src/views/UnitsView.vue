@@ -14,8 +14,11 @@ import type { CreateUnitInput, UnitOfMeasure } from "@hesabyar/shared";
 import { createUnit, fetchUnits, updateUnit } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("units");
 const units = ref<UnitOfMeasure[]>([]);
 const loading = ref(false);
 const dialogVisible = ref(false);
@@ -105,11 +108,15 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
-    <PageHeader title="واحدهای اندازه‌گیری" subtitle="کیسه، کارتن، بطری، …">
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
       <template #actions>
-        <Button label="واحد جدید" icon="pi pi-plus" @click="openCreate" />
+        <Button label="واحد جدید" icon="pi pi-plus" class="min-h-11" @click="openCreate" />
       </template>
     </PageHeader>
 
@@ -117,7 +124,21 @@ async function save(): Promise<void> {
       v-if="!loading && units.length === 0"
       title="واحدی تعریف نشده"
       description="از seed یا دکمه بالا واحد اضافه کنید"
+      action-label="واحد جدید"
+      @action="openCreate"
     />
+
+    <ul v-else-if="isMobile" class="list-none m-0 p-0 space-y-2">
+      <li v-for="row in units" :key="row.id">
+        <MobileListCard
+          :title="row.nameFa"
+          :subtitle="row.code"
+          :meta="row.isActive ? 'فعال' : 'غیرفعال'"
+          :meta-severity="row.isActive ? 'success' : 'secondary'"
+          @click="openEdit(row)"
+        />
+      </li>
+    </ul>
 
     <DataTable v-else :value="units" :loading="loading" class="text-sm">
       <Column field="code" header="کد" />

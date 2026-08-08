@@ -11,8 +11,12 @@ import type { CheckKind, CreateCheckInput, Party } from "@hesabyar/shared";
 import { CHECK_KIND_LABELS, todayJalali } from "@hesabyar/shared";
 import { createCheck, fetchParties } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { useIsMobileRef } from "@/composables/useViewport";
+import CheckFormMobile from "@/views/check/CheckFormMobile.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
+
+const isMobile = useIsMobileRef();
 
 const router = useRouter();
 const toast = useToast();
@@ -111,7 +115,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <CheckFormMobile v-if="isMobile" />
+
+  <div v-else class="hy-page" dir="rtl">
     <Toast />
     <PageHeader
       title="ثبت چک صیادی"

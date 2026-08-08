@@ -43,11 +43,13 @@ import {
 import { downloadBackupJson, readBackupFile } from "@/lib/backup-download";
 import PageHeader from "@/components/PageHeader.vue";
 import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
 const confirm = useConfirm();
+const { copy: pageCopy, isMobile } = usePageCopy("settings");
 const { user } = useAuth();
 const loading = ref(false);
 
@@ -342,11 +344,15 @@ function onRestoreFile(event: Event): void {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <ConfirmDialog />
 
-    <PageHeader :title="ux.settings.title" :subtitle="ux.settings.subtitle" />
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    />
 
     <TabView>
       <TabPanel :header="ux.settings.businessTab" value="business">

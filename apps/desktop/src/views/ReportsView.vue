@@ -49,6 +49,19 @@ const toast = useToast();
 const { copy: pageCopy, isMobile } = usePageCopy("reports");
 const loading = ref(false);
 
+const reportTabIndex = ref(0);
+const reportTabOptions = [
+  { label: ux.reportsMobile.profitLoss, value: 0 },
+  { label: ux.reportsMobile.balanceSheet, value: 1 },
+  { label: ux.reportsMobile.partyStatement, value: 2 },
+  { label: ux.reportsMobile.vat, value: 3 },
+  { label: ux.reportsMobile.cashFlow, value: 4 },
+  { label: ux.reportsMobile.checks, value: 5 },
+  { label: ux.reportsMobile.kardex, value: 6 },
+  { label: ux.reportsMobile.ownerStatus, value: 7 },
+  { label: ux.reportsMobile.partners, value: 8 },
+];
+
 const fromJalali = ref(`${todayJalali().split("/")[0]}/01/01`);
 const toJalali = ref(todayJalali());
 const asOfJalali = ref(todayJalali());
@@ -227,7 +240,19 @@ onMounted(async () => {
       :hint="pageCopy.hint"
     />
 
-    <TabView>
+    <Select
+      v-if="isMobile"
+      v-model="reportTabIndex"
+      :options="reportTabOptions"
+      option-label="label"
+      option-value="value"
+      class="w-full"
+    />
+
+    <TabView
+      v-model:activeIndex="reportTabIndex"
+      :class="{ 'hy-reports-mobile': isMobile }"
+    >
       <TabPanel header="سود و زیان" value="0">
         <div class="flex flex-wrap gap-3 mb-4 items-end">
           <JalaliDatePicker v-model="fromJalali" label="از تاریخ" />
@@ -637,3 +662,9 @@ onMounted(async () => {
     </TabView>
   </div>
 </template>
+
+<style scoped>
+.hy-reports-mobile :deep(.p-tabview-nav) {
+  display: none;
+}
+</style>
