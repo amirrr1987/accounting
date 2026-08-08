@@ -101,6 +101,11 @@ enum BusinessType {
   OTHER
 }
 
+enum ExpensePayFrom {
+  CASH
+  BANK
+}
+
 model FiscalYear {
   id                  String   @id @default(uuid())
   title               String   @unique
@@ -159,6 +164,8 @@ model Voucher {
   weightAdjustment WeightAdjustment?
   check            Check?       @relation("CheckReceiptVoucher")
   checkEvents      CheckEvent[]
+  expense          Expense?
+  ownerDrawing     OwnerDrawing?
 
   @@index([date])
   @@index([kind])
@@ -207,6 +214,7 @@ model Party {
   invoices     Invoice[]
   voucherLines VoucherLine[]
   checks       Check[]
+  expenses     Expense[]
 
   @@index([kind])
   @@index([name])
@@ -424,6 +432,79 @@ model BusinessSettings {
   updatedAt          DateTime     @updatedAt
 
   @@map("business_settings")
+}
+
+model ExpenseCategory {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  nameFa         String
+  coaAccountCode String
+  isSystem       Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id            String         @id @default(uuid())
+  categoryId    String
+  date          DateTime       @db.Date
+  amount        BigInt
+  description   String         @default("")
+  payFrom       ExpensePayFrom @default(CASH)
+  cashAccountId String?
+  bankAccountId String?
+  partyId       String?
+  voucherId     String?        @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  party    Party?          @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  voucher  Voucher?        @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([date])
+  @@map("expenses")
+}
+
+model Owner {
+  id         String   @id @default(uuid())
+  name       String
+  mobile     String?
+  nationalId String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  drawings OwnerDrawing[]
+
+  @@map("owners")
+}
+
+model OwnerDrawing {
+  id            String         @id @default(uuid())
+  ownerId       String
+  date          DateTime       @db.Date
+  amount        BigInt
+  description   String         @default("")
+  payFrom       ExpensePayFrom @default(CASH)
+  cashAccountId String?
+  bankAccountId String?
+  voucherId     String?        @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  owner   Owner    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([date])
+  @@map("owner_drawings")
 }
 
 model User {

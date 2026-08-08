@@ -4,6 +4,7 @@ import {
   DEFAULT_ADMIN_PASSWORD,
   DEFAULT_ADMIN_USERNAME,
   DEFAULT_UNITS,
+  DEFAULT_EXPENSE_CATEGORIES,
   IRANIAN_COA_SEED,
 } from "@hesabyar/shared";
 
@@ -162,9 +163,54 @@ async function seedFiscalYear(): Promise<void> {
   console.log(`Seeded fiscal year ${year}`);
 }
 
+async function seedExpenseCategories(): Promise<void> {
+  const existing = await prisma.expenseCategory.findMany({
+    select: { code: true },
+  });
+  const codes = new Set(existing.map((c) => c.code));
+  let created = 0;
+
+  for (const cat of DEFAULT_EXPENSE_CATEGORIES) {
+    if (codes.has(cat.code)) continue;
+    await prisma.expenseCategory.create({
+      data: {
+        code: cat.code,
+        nameFa: cat.nameFa,
+        coaAccountCode: cat.coaAccountCode,
+        isSystem: true,
+        isActive: true,
+      },
+    });
+    created += 1;
+  }
+
+  console.log(
+    created === 0
+      ? `Expense categories complete — ${codes.size + created} present`
+      : `Seeded ${created} expense categories`,
+  );
+}
+
+async function seedDefaultOwner(): Promise<void> {
+  const existing = await prisma.owner.findFirst();
+  if (existing) {
+    console.log(`Default owner already exists (${existing.name})`);
+    return;
+  }
+  await prisma.owner.create({
+    data: {
+      name: "مالک",
+      isActive: true,
+    },
+  });
+  console.log("Seeded default owner: مالک");
+}
+
 async function main(): Promise<void> {
   await seedAccounts();
   await seedUnits();
+  await seedExpenseCategories();
+  await seedDefaultOwner();
   await seedAdmin();
   await seedFiscalYear();
 }

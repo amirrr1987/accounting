@@ -40,6 +40,17 @@ import {
   CheckQuerySchema,
   BusinessSettingsSchema,
   UpdateBusinessSettingsSchema,
+  ExpenseCategoryListSchema,
+  ExpenseListSchema,
+  ExpenseSchema,
+  ExpenseSummarySchema,
+  CreateExpenseSchema,
+  OwnerListSchema,
+  OwnerSchema,
+  CreateOwnerSchema,
+  OwnerDrawingListSchema,
+  OwnerDrawingSchema,
+  CreateOwnerDrawingSchema,
   CloseFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
@@ -100,6 +111,14 @@ import {
   type UpdateCheckStatusInput,
   type BusinessSettings,
   type UpdateBusinessSettingsInput,
+  type ExpenseCategory,
+  type Expense,
+  type ExpenseSummary,
+  type CreateExpenseInput,
+  type Owner,
+  type CreateOwnerInput,
+  type OwnerDrawing,
+  type CreateOwnerDrawingInput,
 } from "@hesabyar/shared";
 import { useAuth } from "@/composables/useAuth";
 import { resolveApiBaseUrl } from "@/lib/api-base";
@@ -590,4 +609,60 @@ export async function restoreBackup(body: BackupSnapshot): Promise<RestoreResult
   const payload = BackupSnapshotSchema.parse(body);
   const { data } = await api.post<unknown>("/backup/restore", payload);
   return RestoreResultSchema.parse(data);
+}
+
+export async function fetchExpenseCategories(): Promise<ExpenseCategory[]> {
+  const { data } = await api.get<unknown>("/expense-categories");
+  return ExpenseCategoryListSchema.parse(data);
+}
+
+export async function fetchExpenses(): Promise<Expense[]> {
+  const { data } = await api.get<unknown>("/expenses");
+  return ExpenseListSchema.parse(data);
+}
+
+export async function createExpense(input: CreateExpenseInput): Promise<Expense> {
+  const body = CreateExpenseSchema.parse({
+    ...input,
+    amount: input.amount.toString(),
+  });
+  const { data } = await api.post<unknown>("/expenses", body);
+  return ExpenseSchema.parse(data);
+}
+
+export async function fetchExpenseSummary(
+  fromJalali: string,
+  toJalali: string,
+): Promise<ExpenseSummary> {
+  const { data } = await api.get<unknown>("/expenses/summary", {
+    params: { fromJalali, toJalali },
+  });
+  return ExpenseSummarySchema.parse(data);
+}
+
+export async function fetchOwners(): Promise<Owner[]> {
+  const { data } = await api.get<unknown>("/owners");
+  return OwnerListSchema.parse(data);
+}
+
+export async function createOwner(input: CreateOwnerInput): Promise<Owner> {
+  const body = CreateOwnerSchema.parse(input);
+  const { data } = await api.post<unknown>("/owners", body);
+  return OwnerSchema.parse(data);
+}
+
+export async function fetchOwnerDrawings(): Promise<OwnerDrawing[]> {
+  const { data } = await api.get<unknown>("/owner-drawings");
+  return OwnerDrawingListSchema.parse(data);
+}
+
+export async function createOwnerDrawing(
+  input: CreateOwnerDrawingInput,
+): Promise<OwnerDrawing> {
+  const body = CreateOwnerDrawingSchema.parse({
+    ...input,
+    amount: input.amount.toString(),
+  });
+  const { data } = await api.post<unknown>("/owner-drawings", body);
+  return OwnerDrawingSchema.parse(data);
 }

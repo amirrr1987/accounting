@@ -301,6 +301,38 @@ export {
 } from "./schemas/business-settings.schema";
 
 export {
+  ExpensePayFromSchema,
+  EXPENSE_PAY_FROM_LABELS,
+  ExpenseCategorySchema,
+  ExpenseCategoryListSchema,
+  CreateExpenseSchema,
+  ExpenseSchema,
+  ExpenseListSchema,
+  ExpenseSummaryQuerySchema,
+  ExpenseSummaryRowSchema,
+  ExpenseSummarySchema,
+  EXPENSE_POSTING_CODES,
+  DEFAULT_EXPENSE_CATEGORIES,
+  OwnerSchema,
+  CreateOwnerSchema,
+  OwnerListSchema,
+  CreateOwnerDrawingSchema,
+  OwnerDrawingSchema,
+  OwnerDrawingListSchema,
+  type ExpensePayFrom,
+  type ExpenseCategory,
+  type CreateExpenseInput,
+  type Expense,
+  type ExpenseSummaryQuery,
+  type ExpenseSummaryRow,
+  type ExpenseSummary,
+  type Owner,
+  type CreateOwnerInput,
+  type CreateOwnerDrawingInput,
+  type OwnerDrawing,
+} from "./schemas/expense.schema";
+
+export {
   ReportRangeQuerySchema,
   ReportAsOfQuerySchema,
   PartyStatementQuerySchema,

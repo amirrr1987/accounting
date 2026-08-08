@@ -43,6 +43,7 @@ export const ux = {
     parties: "طرف‌حساب‌ها",
     products: "کالاها",
     weightAdjustments: "کسر/اضافه بار",
+    expenses: "مخارج",
     bankAccounts: "حساب‌های بانکی",
     checks: "چک‌های صیادی",
     settings: "تنظیمات",

@@ -22,6 +22,7 @@ import { WeightAdjustmentModule } from "./weight-adjustment/weight-adjustment.mo
 import { BankAccountModule } from "./bank-account/bank-account.module";
 import { CheckModule } from "./check/check.module";
 import { BusinessSettingsModule } from "./business-settings/business-settings.module";
+import { ExpenseModule } from "./expense/expense.module";
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { BusinessSettingsModule } from "./business-settings/business-settings.mo
     BankAccountModule,
     CheckModule,
     BusinessSettingsModule,
+    ExpenseModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

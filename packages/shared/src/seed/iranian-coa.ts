@@ -47,6 +47,9 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "32", name: "سود و زیان انباشته", type: "EQUITY", nature: "CREDIT", level: "TOTAL", parentCode: "3" },
   { code: "321", name: "سود انباشته", type: "EQUITY", nature: "CREDIT", level: "SUBTOTAL", parentCode: "32" },
   { code: "32101", name: "سود (زیان) انباشته", type: "EQUITY", nature: "CREDIT", level: "DETAIL", parentCode: "321" },
+  { code: "33", name: "برداشت‌های مالک", type: "EQUITY", nature: "DEBIT", level: "TOTAL", parentCode: "3" },
+  { code: "331", name: "برداشت شخصی", type: "EQUITY", nature: "DEBIT", level: "SUBTOTAL", parentCode: "33" },
+  { code: "33101", name: "برداشت شخصی مالک", type: "EQUITY", nature: "DEBIT", level: "DETAIL", parentCode: "331" },
 
   // ——— درآمدها ———
   { code: "4", name: "درآمدها", type: "INCOME", nature: "CREDIT", level: "GROUP", parentCode: null },
@@ -63,6 +66,8 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "51102", name: "اجاره محل", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "51103", name: "آب، برق و گاز", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "51104", name: "پورسانت فروش", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
+  { code: "51105", name: "دستمزد کارگر / پیمانکار", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
+  { code: "51106", name: "هزینه‌های متفرقه", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "512", name: "بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "SUBTOTAL", parentCode: "51" },
   { code: "51201", name: "بهای تمام‌شده کالای فروش رفته", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
   { code: "51202", name: "زیان فروش زیر بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },

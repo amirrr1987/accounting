@@ -41,6 +41,7 @@ const navItems = computed((): NavItem[] => [
   { label: ux.nav.products, icon: "pi pi-box", path: "/products" },
   { label: "واحدها", icon: "pi pi-sliders-h", path: "/units" },
   { label: ux.nav.weightAdjustments, icon: "pi pi-percentage", path: "/weight-adjustments" },
+  { label: ux.nav.expenses, icon: "pi pi-receipt", path: "/expenses" },
   { label: ux.nav.invoices, icon: "pi pi-file", path: "/invoices" },
   { label: ux.nav.payments, icon: "pi pi-wallet", path: "/payments/new" },
   { label: ux.nav.checks, icon: "pi pi-money-bill", path: "/checks" },
