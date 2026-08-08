@@ -1,0 +1,75 @@
+import { computed, ref } from "vue";
+import type { AuthUser } from "@hesabyar/shared";
+
+const TOKEN_KEY = "hesabyar-access-token";
+const USER_KEY = "hesabyar-auth-user";
+
+function storageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
+
+function storageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+const token = ref<string | null>(storageGet(TOKEN_KEY));
+const user = ref<AuthUser | null>(readUser());
+
+function readUser(): AuthUser | null {
+  const raw = storageGet(USER_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as AuthUser;
+    if (!parsed.role) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function useAuth() {
+  const isAuthenticated = computed(() => Boolean(token.value));
+
+  function setSession(accessToken: string, nextUser: AuthUser): void {
+    token.value = accessToken;
+    user.value = nextUser;
+    storageSet(TOKEN_KEY, accessToken);
+    storageSet(USER_KEY, JSON.stringify(nextUser));
+  }
+
+  function clearSession(): void {
+    token.value = null;
+    user.value = null;
+    storageRemove(TOKEN_KEY);
+    storageRemove(USER_KEY);
+  }
+
+  function getToken(): string | null {
+    return token.value;
+  }
+
+  return {
+    token,
+    user,
+    isAuthenticated,
+    setSession,
+    clearSession,
+    getToken,
+  };
+}

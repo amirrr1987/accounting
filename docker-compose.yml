@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hesabyar-postgres
+    restart: unless-stopped
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_USER: hesabyar
+      POSTGRES_PASSWORD: hesabyar
+      POSTGRES_DB: hesabyar
+    volumes:
+      - hesabyar_pg:/var/lib/postgresql/data
+
+volumes:
+  hesabyar_pg:

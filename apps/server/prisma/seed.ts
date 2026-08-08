@@ -1,0 +1,123 @@
+import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcrypt";
+import {
+  DEFAULT_ADMIN_PASSWORD,
+  DEFAULT_ADMIN_USERNAME,
+  IRANIAN_COA_SEED,
+} from "@hesabyar/shared";
+
+const prisma = new PrismaClient();
+
+async function seedAdmin(): Promise<void> {
+  const existing = await prisma.user.findUnique({
+    where: { username: DEFAULT_ADMIN_USERNAME },
+  });
+  if (existing) {
+    console.log(`Admin user already exists (${DEFAULT_ADMIN_USERNAME})`);
+    return;
+  }
+  const passwordHash = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
+  await prisma.user.create({
+    data: {
+      username: DEFAULT_ADMIN_USERNAME,
+      passwordHash,
+      role: "ADMIN",
+      isActive: true,
+    },
+  });
+  console.log(
+    `Seeded default admin user: ${DEFAULT_ADMIN_USERNAME} / ${DEFAULT_ADMIN_PASSWORD}`,
+  );
+}
+
+async function seedAccounts(): Promise<void> {
+  const existing = await prisma.account.findMany({
+    select: { code: true, id: true },
+  });
+  const codeToId = new Map(existing.map((a) => [a.code, a.id]));
+
+  if (existing.length === 0) {
+    console.log("Seeding full Iranian chart of accounts…");
+  } else {
+    console.log(
+      `Found ${existing.length} accounts — inserting any missing seed codes…`,
+    );
+  }
+
+  const order: Array<"GROUP" | "TOTAL" | "SUBTOTAL" | "DETAIL"> = [
+    "GROUP",
+    "TOTAL",
+    "SUBTOTAL",
+    "DETAIL",
+  ];
+
+  let createdCount = 0;
+
+  for (const level of order) {
+    const batch = IRANIAN_COA_SEED.filter((a) => a.level === level);
+    for (const seed of batch) {
+      if (codeToId.has(seed.code)) continue;
+
+      const parentId = seed.parentCode
+        ? (codeToId.get(seed.parentCode) ?? null)
+        : null;
+
+      if (seed.parentCode && !parentId) {
+        throw new Error(`Parent not found for ${seed.code}: ${seed.parentCode}`);
+      }
+
+      const created = await prisma.account.create({
+        data: {
+          code: seed.code,
+          name: seed.name,
+          type: seed.type,
+          nature: seed.nature,
+          level: seed.level,
+          parentId,
+          isActive: true,
+        },
+      });
+      codeToId.set(seed.code, created.id);
+      createdCount += 1;
+    }
+  }
+
+  console.log(
+    createdCount === 0
+      ? `Seed complete — ${codeToId.size} accounts present`
+      : `Seeded ${createdCount} missing accounts (${codeToId.size} total)`,
+  );
+}
+
+async function seedFiscalYear(): Promise<void> {
+  const existing = await prisma.fiscalYear.findFirst();
+  if (existing) {
+    console.log(`Fiscal year already exists (${existing.title})`);
+    return;
+  }
+  const year = "1403";
+  await prisma.fiscalYear.create({
+    data: {
+      title: year,
+      startJalali: `${year}/01/01`,
+      endJalali: `${year}/12/29`,
+      isActive: true,
+    },
+  });
+  console.log(`Seeded fiscal year ${year}`);
+}
+
+async function main(): Promise<void> {
+  await seedAccounts();
+  await seedAdmin();
+  await seedFiscalYear();
+}
+
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,0 +1,24 @@
+{
+  "name": "hesabyar",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HesabYar (حساب‌یار) — Simple Persian Accounting Desktop App",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:server": "pnpm --filter @hesabyar/server dev",
+    "dev:desktop": "pnpm --filter @hesabyar/desktop tauri:dev",
+    "build:installer": "pnpm --filter @hesabyar/shared build && pnpm --filter @hesabyar/desktop tauri:build",
+    "db:up": "docker compose up -d",
+    "db:migrate": "pnpm --filter @hesabyar/server exec prisma migrate dev",
+    "db:seed": "pnpm --filter @hesabyar/server prisma:seed",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "~5.6.3"
+  }
+}

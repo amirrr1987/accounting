@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum AccountNature {
+  DEBIT
+  CREDIT
+}
+
+enum AccountLevel {
+  GROUP
+  TOTAL
+  SUBTOTAL
+  DETAIL
+}
+
+enum PartyKind {
+  CUSTOMER
+  SUPPLIER
+}
+
+enum InvoiceKind {
+  SALE
+  PURCHASE
+}
+
+enum VoucherKind {
+  GENERAL
+  RECEIPT
+  PAYMENT
+  INVOICE
+  REVERSAL
+}
+
+enum UserRole {
+  ADMIN
+  ACCOUNTANT
+  VIEWER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  EXPORT
+  RESTORE
+}
+
+model FiscalYear {
+  id                  String   @id @default(uuid())
+  title               String   @unique
+  startJalali         String
+  endJalali           String
+  isClosed            Boolean  @default(false)
+  isActive            Boolean  @default(false)
+  /// قفل تا این تاریخ — اسناد قبل/مساوی قابل ثبت نیست
+  closedThroughJalali String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("fiscal_years")
+}
+
+model Account {
+  id        String        @id @default(uuid())
+  code      String        @unique
+  name      String
+  type      AccountType
+  nature    AccountNature
+  level     AccountLevel
+  parentId  String?
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  parent       Account?      @relation("AccountTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children     Account[]     @relation("AccountTree")
+  voucherLines VoucherLine[]
+
+  @@index([parentId])
+  @@index([name])
+  @@map("accounts")
+}
+
+model Voucher {
+  id           String      @id @default(uuid())
+  number       String      @unique
+  kind         VoucherKind @default(GENERAL)
+  date         DateTime    @db.Date
+  description  String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  /// برای برگشت فاکتور حذف‌شده
+  reversedOfId String?     @unique
+  reversedOf   Voucher?    @relation("VoucherReversal", fields: [reversedOfId], references: [id])
+  reversal     Voucher?    @relation("VoucherReversal")
+
+  lines   VoucherLine[]
+  invoice Invoice?
+
+  @@index([date])
+  @@index([kind])
+  @@map("vouchers")
+}
+
+model VoucherLine {
+  id          String  @id @default(uuid())
+  voucherId   String
+  accountId   String
+  partyId     String?
+  description String  @default("")
+  debit       BigInt  @default(0)
+  credit      BigInt  @default(0)
+  lineOrder   Int
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  party   Party?  @relation(fields: [partyId], references: [id], onDelete: Restrict)
+
+  @@index([voucherId])
+  @@index([accountId])
+  @@index([partyId])
+  @@map("voucher_lines")
+}
+
+model VoucherSequence {
+  id    Int @id @default(1)
+  value Int @default(0)
+
+  @@map("voucher_sequences")
+}
+
+model Party {
+  id         String    @id @default(uuid())
+  kind       PartyKind
+  name       String
+  phone      String?
+  nationalId String?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  invoices     Invoice[]
+  voucherLines VoucherLine[]
+
+  @@index([kind])
+  @@index([name])
+  @@map("parties")
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  sku       String   @unique
+  name      String
+  unitPrice BigInt
+  costPrice BigInt   @default(0)
+  stockQty  Int      @default(0)
+  vatRate   Float    @default(0.09)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoiceLines InvoiceLine[]
+
+  @@map("products")
+}
+
+model Invoice {
+  id          String      @id @default(uuid())
+  number      String      @unique
+  kind        InvoiceKind
+  partyId     String
+  date        DateTime    @db.Date
+  description String      @default("")
+  subtotal       BigInt
+  vatAmount      BigInt
+  headerDiscount BigInt      @default(0)
+  total          BigInt
+  voucherId   String?     @unique
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  party   Party         @relation(fields: [partyId], references: [id], onDelete: Restrict)
+  voucher Voucher?      @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  lines   InvoiceLine[]
+
+  @@index([partyId])
+  @@index([date])
+  @@index([deletedAt])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id        String @id @default(uuid())
+  invoiceId String
+  productId String
+  quantity  Int
+  unitPrice      BigInt
+  vatRate        Float
+  discountAmount BigInt @default(0)
+  lineNet        BigInt
+  lineVat   BigInt
+  lineTotal BigInt
+  lineOrder Int
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceId])
+  @@map("invoice_lines")
+}
+
+model InvoiceSequence {
+  id    Int @id @default(1)
+  value Int @default(0)
+
+  @@map("invoice_sequences")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  role         UserRole @default(ACCOUNTANT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String?
+  username  String
+  action    AuditAction
+  entity    String
+  entityId  String?
+  detail    String?
+  createdAt DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entity])
+  @@map("audit_logs")
+}

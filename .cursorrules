@@ -1,0 +1,23 @@
+# HesabYar Cursor Rules
+
+Full project rules: see CURSOR_RULES.md
+
+## Always
+- TypeScript strict, no `any`
+- Shared Zod schemas in `packages/shared` for every API payload
+- RTL + Vazirmatn + Jalali dates + fa-IR money formatting
+- PrimeVue only for inputs/tables
+- Accounting equation must balance on every voucher commit
+- One phase at a time; tests green before phase complete
+- Ask approval before next phase
+
+## Monorepo
+- `apps/desktop` — Tauri + Vue
+- `apps/server` — NestJS
+- `packages/shared` — Zod schemas
+
+## After each phase
+1. `pnpm test`
+2. Smoke `pnpm dev`
+3. `chore(phase-N): ...` commit
+4. Wait for user approval

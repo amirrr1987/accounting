@@ -1,0 +1,241 @@
+<script setup lang="ts">
+import { onMounted, reactive, ref } from "vue";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import Button from "primevue/button";
+import Dialog from "primevue/dialog";
+import InputText from "primevue/inputtext";
+import Select from "primevue/select";
+import Tag from "primevue/tag";
+import Toast from "primevue/toast";
+import { useToast } from "primevue/usetoast";
+import type { CreatePartyInput, Party, PartyKind } from "@hesabyar/shared";
+import {
+  createParty,
+  deleteParty,
+  fetchParties,
+  updateParty,
+} from "@/lib/api";
+import { ux } from "@/locale/ux-copy";
+import PageHeader from "@/components/PageHeader.vue";
+import EmptyState from "@/components/EmptyState.vue";
+
+const toast = useToast();
+const parties = ref<Party[]>([]);
+const loading = ref(false);
+const dialogVisible = ref(false);
+const saving = ref(false);
+const editing = ref<Party | null>(null);
+
+const form = reactive({
+  kind: "CUSTOMER" as PartyKind,
+  name: "",
+  phone: "",
+  nationalId: "",
+});
+
+const kindOptions = [
+  { label: "مشتری", value: "CUSTOMER" },
+  { label: "تأمین‌کننده", value: "SUPPLIER" },
+];
+
+async function load(): Promise<void> {
+  loading.value = true;
+  try {
+    parties.value = await fetchParties();
+  } catch {
+    toast.add({
+      severity: "error",
+      summary: ux.parties.title,
+      detail: ux.parties.loadError,
+      life: 4500,
+    });
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  void load();
+});
+
+function openCreate(): void {
+  editing.value = null;
+  form.kind = "CUSTOMER";
+  form.name = "";
+  form.phone = "";
+  form.nationalId = "";
+  dialogVisible.value = true;
+}
+
+function openEdit(row: Party): void {
+  editing.value = row;
+  form.kind = row.kind;
+  form.name = row.name;
+  form.phone = row.phone ?? "";
+  form.nationalId = row.nationalId ?? "";
+  dialogVisible.value = true;
+}
+
+async function save(): Promise<void> {
+  if (!form.name.trim()) return;
+  saving.value = true;
+  const payload: CreatePartyInput = {
+    kind: form.kind,
+    name: form.name.trim(),
+    phone: form.phone.trim() || null,
+    nationalId: form.nationalId.trim() || null,
+    isActive: true,
+  };
+  try {
+    if (editing.value) {
+      await updateParty(editing.value.id, payload);
+      toast.add({
+        severity: "success",
+        summary: "ذخیره شد",
+        detail: "طرف‌حساب ویرایش شد",
+        life: 2500,
+      });
+    } else {
+      await createParty(payload);
+      toast.add({
+        severity: "success",
+        summary: "ایجاد شد",
+        detail: "طرف‌حساب افزوده شد",
+        life: 2500,
+      });
+    }
+    dialogVisible.value = false;
+    await load();
+  } catch {
+    toast.add({
+      severity: "error",
+      summary: "خطا",
+      detail: "ذخیره طرف‌حساب ناموفق بود",
+      life: 4000,
+    });
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function deactivate(row: Party): Promise<void> {
+  try {
+    await deleteParty(row.id);
+    toast.add({
+      severity: "success",
+      summary: "غیرفعال شد",
+      detail: row.name,
+      life: 2500,
+    });
+    await load();
+  } catch {
+    toast.add({
+      severity: "error",
+      summary: "خطا",
+      detail: "غیرفعال‌سازی ناموفق بود",
+      life: 4000,
+    });
+  }
+}
+</script>
+
+<template>
+  <div class="hy-page" dir="rtl">
+    <Toast />
+
+    <PageHeader :title="ux.parties.title" :subtitle="ux.parties.subtitle">
+      <template #actions>
+        <Button
+          :label="ux.parties.create"
+          icon="pi pi-plus"
+          class="min-h-11"
+          @click="openCreate"
+        />
+      </template>
+    </PageHeader>
+
+    <div class="hy-surface overflow-hidden">
+      <EmptyState
+        v-if="!loading && parties.length === 0"
+        :title="ux.parties.emptyTitle"
+        :description="ux.parties.emptyBody"
+        icon="pi pi-users"
+        :action-label="ux.parties.emptyCta"
+        @action="openCreate"
+      />
+
+      <DataTable
+        v-else
+        :value="parties"
+        :loading="loading"
+        paginator
+        :rows="15"
+        class="text-sm"
+      >
+      <Column field="name" header="نام" />
+      <Column header="نوع">
+        <template #body="{ data }">
+          {{ data.kind === "CUSTOMER" ? "مشتری" : "تأمین‌کننده" }}
+        </template>
+      </Column>
+      <Column field="phone" header="تلفن" />
+      <Column field="nationalId" header="شناسه ملی" />
+      <Column header="وضعیت">
+        <template #body="{ data }">
+          <Tag
+            :value="data.isActive ? ux.common.active : ux.common.inactive"
+            :severity="data.isActive ? 'success' : 'secondary'"
+          />
+        </template>
+      </Column>
+      <Column header="عملیات">
+        <template #body="{ data }">
+          <div class="flex gap-2">
+            <Button
+              icon="pi pi-pencil"
+              text
+              rounded
+              class="hy-touch"
+              :aria-label="ux.common.edit"
+              @click="openEdit(data)"
+            />
+            <Button
+              v-if="data.isActive"
+              icon="pi pi-ban"
+              text
+              rounded
+              class="hy-touch"
+              severity="danger"
+              aria-label="غیرفعال‌سازی"
+              @click="deactivate(data)"
+            />
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+    </div>
+
+    <Dialog
+      v-model:visible="dialogVisible"
+      modal
+      :header="editing ? 'ویرایش طرف‌حساب' : ux.parties.create"
+      class="w-full max-w-md"
+    >
+      <div class="flex flex-col gap-3 pt-2">
+        <label class="text-sm text-[var(--hy-muted)]">نوع</label>
+        <Select v-model="form.kind" :options="kindOptions" option-label="label" option-value="value" />
+        <label class="text-sm text-[var(--hy-muted)]">نام</label>
+        <InputText v-model="form.name" class="min-h-11" />
+        <label class="text-sm text-[var(--hy-muted)]">تلفن</label>
+        <InputText v-model="form.phone" class="min-h-11" />
+        <label class="text-sm text-[var(--hy-muted)]">شناسه ملی</label>
+        <InputText v-model="form.nationalId" class="min-h-11" />
+      </div>
+      <template #footer>
+        <Button :label="ux.common.cancel" text class="min-h-11" @click="dialogVisible = false" />
+        <Button :label="ux.common.save" class="min-h-11" :loading="saving" @click="save" />
+      </template>
+    </Dialog>
+  </div>
+</template>
