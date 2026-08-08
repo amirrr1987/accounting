@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import Button from "primevue/button";
@@ -7,6 +7,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
+import Textarea from "primevue/textarea";
 import Password from "primevue/password";
 import Select from "primevue/select";
 import Tag from "primevue/tag";
@@ -17,9 +18,13 @@ import { useToast } from "primevue/usetoast";
 import {
   AUDIT_ACTION_LABELS,
   BackupSnapshotSchema,
+  BUSINESS_TYPE_LABELS,
   USER_ROLE_LABELS,
+  canWrite,
   type AuditLog,
   type AuditAction,
+  type BusinessSettings,
+  type BusinessType,
   type UserRecord,
   type UserRole,
 } from "@hesabyar/shared";
@@ -27,23 +32,55 @@ import {
   createUser,
   exportBackup,
   fetchAuditLogs,
+  fetchBusinessSettings,
   fetchUsers,
   restoreBackup,
+  updateBusinessSettings,
   updateUser,
 } from "@/lib/api";
 import { downloadBackupJson, readBackupFile } from "@/lib/backup-download";
 import PageHeader from "@/components/PageHeader.vue";
+import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
 const confirm = useConfirm();
+const { user } = useAuth();
 const loading = ref(false);
+
+const isAdmin = computed(() => user.value?.role === "ADMIN");
+const canEditBusiness = computed(() =>
+  user.value ? canWrite(user.value.role) : false,
+);
 
 const users = ref<UserRecord[]>([]);
 const auditLogs = ref<AuditLog[]>([]);
 const userDialog = ref(false);
 const savingUser = ref(false);
+const savingBusiness = ref(false);
 const restoreInput = ref<HTMLInputElement | null>(null);
+
+const businessForm = reactive({
+  businessName: "",
+  businessType: "SHOP" as BusinessType,
+  businessTypeCustom: "",
+  legalName: "",
+  nationalId: "",
+  economicCode: "",
+  phone: "",
+  mobile: "",
+  address: "",
+  city: "",
+  postalCode: "",
+  description: "",
+});
+
+const businessTypeOptions = (
+  Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]
+).map((value) => ({
+  label: BUSINESS_TYPE_LABELS[value],
+  value,
+}));
 
 const userForm = reactive({
   username: "",
@@ -58,6 +95,26 @@ const roleOptions = (Object.keys(USER_ROLE_LABELS) as UserRole[]).map(
   }),
 );
 
+function fillBusinessForm(data: BusinessSettings): void {
+  businessForm.businessName = data.businessName;
+  businessForm.businessType = data.businessType;
+  businessForm.businessTypeCustom = data.businessTypeCustom ?? "";
+  businessForm.legalName = data.legalName ?? "";
+  businessForm.nationalId = data.nationalId ?? "";
+  businessForm.economicCode = data.economicCode ?? "";
+  businessForm.phone = data.phone ?? "";
+  businessForm.mobile = data.mobile ?? "";
+  businessForm.address = data.address ?? "";
+  businessForm.city = data.city ?? "";
+  businessForm.postalCode = data.postalCode ?? "";
+  businessForm.description = data.description ?? "";
+}
+
+async function loadBusiness(): Promise<void> {
+  const data = await fetchBusinessSettings();
+  fillBusinessForm(data);
+}
+
 async function loadUsers(): Promise<void> {
   users.value = await fetchUsers();
 }
@@ -69,13 +126,54 @@ async function loadAudit(): Promise<void> {
 onMounted(async () => {
   loading.value = true;
   try {
-    await Promise.all([loadUsers(), loadAudit()]);
+    await loadBusiness();
+    if (isAdmin.value) {
+      await Promise.all([loadUsers(), loadAudit()]);
+    }
   } catch {
     toast.add({ severity: "error", summary: ux.settings.loadError, life: 4000 });
   } finally {
     loading.value = false;
   }
 });
+
+async function saveBusiness(): Promise<void> {
+  if (!canEditBusiness.value || !businessForm.businessName.trim()) return;
+  savingBusiness.value = true;
+  try {
+    const updated = await updateBusinessSettings({
+      businessName: businessForm.businessName.trim(),
+      businessType: businessForm.businessType,
+      businessTypeCustom:
+        businessForm.businessType === "OTHER"
+          ? businessForm.businessTypeCustom.trim() || null
+          : null,
+      legalName: businessForm.legalName.trim() || null,
+      nationalId: businessForm.nationalId.trim() || null,
+      economicCode: businessForm.economicCode.trim() || null,
+      phone: businessForm.phone.trim() || null,
+      mobile: businessForm.mobile.trim() || null,
+      address: businessForm.address.trim() || null,
+      city: businessForm.city.trim() || null,
+      postalCode: businessForm.postalCode.trim() || null,
+      description: businessForm.description.trim() || null,
+    });
+    fillBusinessForm(updated);
+    toast.add({
+      severity: "success",
+      summary: ux.settings.businessSaved,
+      life: 3000,
+    });
+  } catch {
+    toast.add({
+      severity: "error",
+      summary: ux.settings.businessError,
+      life: 4000,
+    });
+  } finally {
+    savingBusiness.value = false;
+  }
+}
 
 function openUserDialog(): void {
   userForm.username = "";
@@ -176,8 +274,133 @@ function onRestoreFile(event: Event): void {
     <PageHeader :title="ux.settings.title" :subtitle="ux.settings.subtitle" />
 
     <TabView>
-      <TabPanel header="پشتیبان" value="0">
+      <TabPanel :header="ux.settings.businessTab" value="business">
+        <div class="hy-surface p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.businessName }}</label>
+            <InputText
+              v-model="businessForm.businessName"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.businessType }}</label>
+            <Select
+              v-model="businessForm.businessType"
+              :options="businessTypeOptions"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div
+            v-if="businessForm.businessType === 'OTHER'"
+            class="flex flex-col gap-1"
+          >
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.businessTypeCustom }}</label>
+            <InputText
+              v-model="businessForm.businessTypeCustom"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.legalName }}</label>
+            <InputText
+              v-model="businessForm.legalName"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.nationalId }}</label>
+            <InputText
+              v-model="businessForm.nationalId"
+              dir="ltr"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.economicCode }}</label>
+            <InputText
+              v-model="businessForm.economicCode"
+              dir="ltr"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.phone }}</label>
+            <InputText
+              v-model="businessForm.phone"
+              dir="ltr"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.mobile }}</label>
+            <InputText
+              v-model="businessForm.mobile"
+              dir="ltr"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.city }}</label>
+            <InputText
+              v-model="businessForm.city"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.postalCode }}</label>
+            <InputText
+              v-model="businessForm.postalCode"
+              dir="ltr"
+              class="min-h-11"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.address }}</label>
+            <Textarea
+              v-model="businessForm.address"
+              rows="2"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.description }}</label>
+            <Textarea
+              v-model="businessForm.description"
+              rows="2"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <Button
+            v-if="canEditBusiness"
+            :label="ux.common.save"
+            icon="pi pi-check"
+            class="min-h-11 md:col-span-2"
+            :loading="savingBusiness"
+            @click="saveBusiness"
+          />
+        </div>
+      </TabPanel>
+
+      <TabPanel v-if="isAdmin" header="پشتیبان" value="backup">
         <div class="hy-surface p-4 space-y-4 max-w-xl">
+          <p class="text-sm text-[var(--hy-muted)] m-0">
+            {{ ux.settings.adminSubtitle }}
+          </p>
           <p class="text-sm text-[var(--hy-muted)] m-0">
             {{ ux.settings.backupHint }}
           </p>
@@ -208,7 +431,7 @@ function onRestoreFile(event: Event): void {
         </div>
       </TabPanel>
 
-      <TabPanel header="کاربران" value="1">
+      <TabPanel v-if="isAdmin" header="کاربران" value="users">
         <div class="mb-3">
           <Button
             :label="ux.settings.addUser"
@@ -245,7 +468,7 @@ function onRestoreFile(event: Event): void {
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="رویدادنگاری" value="2">
+      <TabPanel v-if="isAdmin" header="رویدادنگاری" value="audit">
         <DataTable :value="auditLogs" :loading="loading" size="small" paginator :rows="15">
           <Column header="زمان">
             <template #body="{ data }">

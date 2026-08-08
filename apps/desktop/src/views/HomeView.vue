@@ -8,7 +8,8 @@ import Column from "primevue/column";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import type { DashboardSummary } from "@hesabyar/shared";
-import { fetchDashboard } from "@/lib/api";
+import { formatBusinessTitle } from "@hesabyar/shared";
+import { fetchDashboard, fetchBusinessSettings } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { useBackendHealth } from "@/composables/useBackendHealth";
 import { ux } from "@/locale/ux-copy";
@@ -23,6 +24,7 @@ const toast = useToast();
 const { status, version } = useBackendHealth();
 
 const summary = ref<DashboardSummary | null>(null);
+const businessTitle = ref<string | null>(null);
 const loading = ref(false);
 const loadFailed = ref(false);
 
@@ -91,7 +93,12 @@ async function load(): Promise<void> {
   loading.value = true;
   loadFailed.value = false;
   try {
-    summary.value = await fetchDashboard();
+    const [dash, business] = await Promise.all([
+      fetchDashboard(),
+      fetchBusinessSettings(),
+    ]);
+    summary.value = dash;
+    businessTitle.value = formatBusinessTitle(business);
   } catch {
     loadFailed.value = true;
     toast.add({
@@ -115,7 +122,7 @@ onMounted(() => {
     <Toast />
 
     <PageHeader
-      :title="ux.dashboard.title"
+      :title="businessTitle ?? ux.dashboard.title"
       :subtitle="ux.dashboard.subtitle(summary?.asOfJalali)"
     >
       <template #actions>

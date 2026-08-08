@@ -38,6 +38,8 @@ import {
   CreateCheckSchema,
   UpdateCheckStatusSchema,
   CheckQuerySchema,
+  BusinessSettingsSchema,
+  UpdateBusinessSettingsSchema,
   CloseFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
@@ -96,6 +98,8 @@ import {
   type CheckSummary,
   type CreateCheckInput,
   type UpdateCheckStatusInput,
+  type BusinessSettings,
+  type UpdateBusinessSettingsInput,
 } from "@hesabyar/shared";
 import { useAuth } from "@/composables/useAuth";
 import { resolveApiBaseUrl } from "@/lib/api-base";
@@ -518,6 +522,19 @@ export async function updateCheckStatus(
   const body = UpdateCheckStatusSchema.parse(input);
   const { data } = await api.patch<unknown>(`/checks/${id}/status`, body);
   return CheckSchema.parse(data);
+}
+
+export async function fetchBusinessSettings(): Promise<BusinessSettings> {
+  const { data } = await api.get<unknown>("/settings/business");
+  return BusinessSettingsSchema.parse(data);
+}
+
+export async function updateBusinessSettings(
+  input: UpdateBusinessSettingsInput,
+): Promise<BusinessSettings> {
+  const body = UpdateBusinessSettingsSchema.parse(input);
+  const { data } = await api.patch<unknown>("/settings/business", body);
+  return BusinessSettingsSchema.parse(data);
 }
 
 export async function fetchFiscalYears(): Promise<FiscalYear[]> {

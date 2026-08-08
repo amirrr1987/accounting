@@ -47,9 +47,7 @@ const navItems = computed((): NavItem[] => [
   { label: ux.nav.bankAccounts, icon: "pi pi-building-columns", path: "/bank-accounts" },
   { label: ux.nav.reports, icon: "pi pi-chart-line", path: "/reports" },
   { label: ux.nav.fiscal, icon: "pi pi-lock", path: "/fiscal-years" },
-  ...(isAdminUser.value
-    ? [{ label: ux.nav.settings, icon: "pi pi-cog", path: "/settings" }]
-    : []),
+  { label: ux.nav.settings, icon: "pi pi-cog", path: "/settings" },
 ]);
 
 /** آیتم‌های فقط در drawer موبایل (تب «بیشتر») */

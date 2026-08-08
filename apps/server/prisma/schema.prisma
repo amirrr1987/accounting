@@ -92,6 +92,15 @@ enum CheckStatus {
   PAID
 }
 
+enum BusinessType {
+  SHOP
+  WORKSHOP
+  WAREHOUSE
+  FACTORY
+  COMPANY
+  OTHER
+}
+
 model FiscalYear {
   id                  String   @id @default(uuid())
   title               String   @unique
@@ -395,6 +404,26 @@ model CheckEvent {
 
   @@index([checkId])
   @@map("check_events")
+}
+
+model BusinessSettings {
+  id                 String       @id @default("default")
+  businessName       String       @default("کسب‌وکار من")
+  businessType       BusinessType @default(SHOP)
+  businessTypeCustom String?
+  legalName          String?
+  nationalId         String?
+  economicCode       String?
+  phone              String?
+  mobile             String?
+  address            String?
+  city               String?
+  postalCode         String?
+  description        String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@map("business_settings")
 }
 
 model User {
