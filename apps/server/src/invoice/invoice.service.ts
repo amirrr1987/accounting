@@ -23,11 +23,13 @@ import {
   returnKindFor,
   toBaseQuantity,
   weightedAverageCost,
+  resolveInvoiceLineUnitPrice,
   type CreateInvoiceInput,
   type CreateReturnInvoiceInput,
   type Invoice,
   type InvoicePreviewWarning,
   type InvoiceVoucherPreview,
+  type ProductPricingMode,
 } from "@hesabyar/shared";
 import type { Account, InvoiceKind, UnitOfMeasure } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -70,6 +72,7 @@ type LineRow = {
   lineTotal: bigint;
   sourceLineId?: string;
   unitId?: string | null;
+  catalogUnitPrice?: bigint;
 };
 
 @Injectable()
@@ -359,6 +362,7 @@ export class InvoiceService {
               lineOrder: index,
               sourceLineId: line.sourceLineId ?? null,
               unitId: line.unitId ?? null,
+              catalogUnitPrice: line.catalogUnitPrice ?? null,
             })),
           },
         },
@@ -503,7 +507,25 @@ export class InvoiceService {
         .filter((id): id is string => typeof id === "string"),
     );
 
-    const lineRows: LineRow[] = input.lines.map((line) => {
+    const resolvedLines = input.lines.map((line) => {
+      const product = productById.get(line.productId)!;
+      const pricing = resolveInvoiceLineUnitPrice(
+        {
+          unitPrice: product.unitPrice,
+          pricingMode:
+            (product as { pricingMode?: ProductPricingMode }).pricingMode ??
+            "AT_INVOICE",
+        },
+        line.unitPrice,
+      );
+      return {
+        ...line,
+        unitPrice: pricing.unitPrice,
+        catalogUnitPrice: pricing.catalogUnitPrice,
+      };
+    });
+
+    const lineRows: LineRow[] = resolvedLines.map((line) => {
       const calc = calcInvoiceLine({
         quantity: line.quantity,
         unitPrice: line.unitPrice,
@@ -521,11 +543,12 @@ export class InvoiceService {
         lineVat: calc.lineVat,
         lineTotal: calc.lineTotal,
         unitId: line.unitId ?? product.defaultUnitId,
+        catalogUnitPrice: line.catalogUnitPrice,
       };
     });
 
     const totals = calcInvoiceTotals(
-      input.lines.map((l) => ({
+      resolvedLines.map((l) => ({
         quantity: l.quantity,
         unitPrice: l.unitPrice,
         vatRate: l.vatRate,
@@ -550,7 +573,7 @@ export class InvoiceService {
     let lossTotal = 0n;
     const warnings: InvoicePreviewWarning[] = [];
 
-    const stockRows: StockRow[] = input.lines.map((line, lineIndex) => {
+    const stockRows: StockRow[] = resolvedLines.map((line, lineIndex) => {
       const product = productById.get(line.productId)!;
       const unitId = line.unitId ?? product.defaultUnitId;
       const baseQuantity = this.baseQtyForLine(line.quantity, unitId, unitById);

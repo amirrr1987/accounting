@@ -14,6 +14,7 @@ export function toProductDto(row: ProductRow): Product {
     costPrice: row.costPrice.toString(),
     stockQty: row.stockQty,
     vatRate: row.vatRate,
+    pricingMode: row.pricingMode,
     defaultUnitId: row.defaultUnitId,
     defaultUnitNameFa: row.defaultUnit?.nameFa ?? null,
     isActive: row.isActive,

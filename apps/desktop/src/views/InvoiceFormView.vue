@@ -238,6 +238,11 @@ function onProductChange(line: DraftLine): void {
   line.unitId = p.defaultUnitId;
 }
 
+function isFixedPrice(line: DraftLine): boolean {
+  const p = products.value.find((x) => x.id === line.productId);
+  return p?.pricingMode === "FIXED";
+}
+
 function addLine(): void {
   lines.value.push({
     key: keySeq++,
@@ -420,7 +425,18 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="قیمت واحد" style="width: 10rem">
           <template #body="{ data }">
-            <InputNumber v-model="data.unitPrice" :min="0" class="w-full" />
+            <InputNumber
+              v-model="data.unitPrice"
+              :min="0"
+              :disabled="isFixedPrice(data)"
+              class="w-full"
+            />
+            <small
+              v-if="isFixedPrice(data)"
+              class="text-xs text-[var(--hy-muted)] block mt-1"
+            >
+              قیمت ثابت
+            </small>
           </template>
         </Column>
         <Column header="مالیات ٪" style="width: 7rem">

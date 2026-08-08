@@ -7,7 +7,7 @@ import {
   CreatePaymentSchema,
   CreateReceiptSchema,
   INVOICE_POSTING_CODES,
-  CASH_ACCOUNT_CODES,
+  PAYMENT_POSTING_CODES,
   formatReceiptNumber,
   formatPaymentNumber,
   jalaliToGregorianDate,
@@ -30,7 +30,6 @@ export class PaymentService {
     const input = CreateReceiptSchema.parse(raw);
     await this.fiscalYearService.assertWritable(input.dateJalali);
     const party = await this.requireParty(input.partyId, "CUSTOMER");
-    const cash = await this.requireCashAccount(input.cashAccountId);
     const receivable = await this.requireAccountByCode(
       INVOICE_POSTING_CODES.receivable,
     );
@@ -39,6 +38,22 @@ export class PaymentService {
     const description =
       input.description?.trim() ||
       `دریافت از ${party.name}`;
+
+    let debitAccountId: string;
+    let creditAccountId: string;
+    let creditPartyId: string | undefined = party.id;
+
+    if (input.method === "CHECK_RECEIVABLE") {
+      const checks = await this.requireAccountByCode(
+        PAYMENT_POSTING_CODES.checksReceivable,
+      );
+      debitAccountId = checks.id;
+      creditAccountId = receivable.id;
+    } else {
+      const cash = await this.resolveCashOrBankAccount(input);
+      debitAccountId = cash.id;
+      creditAccountId = receivable.id;
+    }
 
     const created = await this.prisma.$transaction(async (tx) => {
       const seq = await tx.voucherSequence.upsert({
@@ -54,18 +69,20 @@ export class PaymentService {
           kind: "RECEIPT",
           date,
           description,
+          paymentMethod: input.method,
+          bankAccountId: input.bankAccountId ?? null,
           lines: {
             create: [
               {
-                accountId: cash.id,
+                accountId: debitAccountId,
                 description,
                 debit: input.amount,
                 credit: 0n,
                 lineOrder: 0,
               },
               {
-                accountId: receivable.id,
-                partyId: party.id,
+                accountId: creditAccountId,
+                partyId: creditPartyId ?? null,
                 description,
                 debit: 0n,
                 credit: input.amount,
@@ -85,7 +102,6 @@ export class PaymentService {
     const input = CreatePaymentSchema.parse(raw);
     await this.fiscalYearService.assertWritable(input.dateJalali);
     const party = await this.requireParty(input.partyId, "SUPPLIER");
-    const cash = await this.requireCashAccount(input.cashAccountId);
     const payable = await this.requireAccountByCode(
       INVOICE_POSTING_CODES.payable,
     );
@@ -94,6 +110,21 @@ export class PaymentService {
     const description =
       input.description?.trim() ||
       `پرداخت به ${party.name}`;
+
+    let debitAccountId: string;
+    let creditAccountId: string;
+
+    if (input.method === "CHECK_PAYABLE") {
+      debitAccountId = payable.id;
+      const checks = await this.requireAccountByCode(
+        PAYMENT_POSTING_CODES.checksPayable,
+      );
+      creditAccountId = checks.id;
+    } else {
+      const cash = await this.resolveCashOrBankAccount(input);
+      debitAccountId = payable.id;
+      creditAccountId = cash.id;
+    }
 
     const created = await this.prisma.$transaction(async (tx) => {
       const seq = await tx.voucherSequence.upsert({
@@ -109,10 +140,12 @@ export class PaymentService {
           kind: "PAYMENT",
           date,
           description,
+          paymentMethod: input.method,
+          bankAccountId: input.bankAccountId ?? null,
           lines: {
             create: [
               {
-                accountId: payable.id,
+                accountId: debitAccountId,
                 partyId: party.id,
                 description,
                 debit: input.amount,
@@ -120,7 +153,7 @@ export class PaymentService {
                 lineOrder: 0,
               },
               {
-                accountId: cash.id,
+                accountId: creditAccountId,
                 description,
                 debit: 0n,
                 credit: input.amount,
@@ -134,6 +167,26 @@ export class PaymentService {
     });
 
     return toVoucherDto(created);
+  }
+
+  private async resolveCashOrBankAccount(input: {
+    cashAccountId?: string;
+    bankAccountId?: string;
+  }) {
+    if (input.bankAccountId) {
+      const bank = await this.prisma.bankAccount.findUnique({
+        where: { id: input.bankAccountId },
+        include: { coaAccount: true },
+      });
+      if (!bank || !bank.isActive || !bank.coaAccount.isActive) {
+        throw new BadRequestException("حساب بانکی معتبر نیست");
+      }
+      return bank.coaAccount;
+    }
+    if (input.cashAccountId) {
+      return this.requireCashAccount(input.cashAccountId);
+    }
+    throw new BadRequestException("حساب نقد/بانک الزامی است");
   }
 
   private async requireParty(id: string, kind: "CUSTOMER" | "SUPPLIER") {
@@ -154,16 +207,10 @@ export class PaymentService {
   private async requireCashAccount(id: string) {
     const account = await this.prisma.account.findUnique({ where: { id } });
     if (!account || !account.isActive || account.level !== "DETAIL") {
-      throw new BadRequestException("حساب نقد/بانک معتبر نیست");
+      throw new BadRequestException("حساب صندوق معتبر نیست");
     }
-    if (
-      !CASH_ACCOUNT_CODES.includes(
-        account.code as (typeof CASH_ACCOUNT_CODES)[number],
-      )
-    ) {
-      throw new BadRequestException(
-        "فقط حساب صندوق (۱۱۱۰۱) یا بانک (۱۱۱۰۳) مجاز است",
-      );
+    if (account.code !== PAYMENT_POSTING_CODES.cash) {
+      throw new BadRequestException("فقط حساب صندوق (۱۱۱۰۱) مجاز است");
     }
     return account;
   }

@@ -42,6 +42,8 @@ export const ux = {
     trialBalance: "تراز آزمایشی",
     parties: "طرف‌حساب‌ها",
     products: "کالاها",
+    weightAdjustments: "کسر/اضافه بار",
+    bankAccounts: "حساب‌های بانکی",
     invoices: "فاکتورها",
     payments: "دریافت و پرداخت",
     reports: "گزارش‌ها",

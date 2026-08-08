@@ -21,6 +21,7 @@ const product = {
   stockQty: 100,
   vatRate: 0.09,
   defaultUnitId: null,
+  pricingMode: "AT_INVOICE" as const,
 };
 
 const accounts = [

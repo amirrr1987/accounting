@@ -58,6 +58,7 @@ export function toInvoiceDto(
         productName: l.product.name,
         quantity: l.quantity,
         unitPrice: l.unitPrice.toString(),
+        catalogUnitPrice: l.catalogUnitPrice?.toString() ?? null,
         vatRate: l.vatRate,
         discountAmount: l.discountAmount.toString(),
         lineNet: l.lineNet.toString(),

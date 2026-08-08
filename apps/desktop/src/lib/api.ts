@@ -26,6 +26,12 @@ import {
   DashboardSummarySchema,
   CreateReceiptSchema,
   CreatePaymentSchema,
+  WeightAdjustmentListSchema,
+  WeightAdjustmentSchema,
+  CreateWeightAdjustmentSchema,
+  BankAccountListSchema,
+  CreateBankAccountSchema,
+  BankAccountSchema,
   CloseFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
@@ -75,6 +81,10 @@ import {
   type UpdateUserInput,
   type BackupSnapshot,
   type RestoreResult,
+  type WeightAdjustment,
+  type CreateWeightAdjustmentInput,
+  type BankAccount,
+  type CreateBankAccountInput,
 } from "@hesabyar/shared";
 import { useAuth } from "@/composables/useAuth";
 import { resolveApiBaseUrl } from "@/lib/api-base";
@@ -438,6 +448,36 @@ export async function createPayment(
   });
   const { data } = await api.post<unknown>("/payments/payment", payload);
   return VoucherSchema.parse(data);
+}
+
+export async function fetchWeightAdjustments(): Promise<WeightAdjustment[]> {
+  const { data } = await api.get<unknown>("/weight-adjustments");
+  return WeightAdjustmentListSchema.parse(data);
+}
+
+export async function createWeightAdjustment(
+  input: CreateWeightAdjustmentInput,
+): Promise<WeightAdjustment> {
+  const body = CreateWeightAdjustmentSchema.parse(input);
+  const { data } = await api.post<unknown>("/weight-adjustments", body);
+  return WeightAdjustmentSchema.parse(data);
+}
+
+export async function fetchBankAccounts(): Promise<BankAccount[]> {
+  const { data } = await api.get<unknown>("/bank-accounts");
+  return BankAccountListSchema.parse(data);
+}
+
+export async function createBankAccount(
+  input: CreateBankAccountInput,
+): Promise<BankAccount> {
+  const body = CreateBankAccountSchema.parse(input);
+  const { data } = await api.post<unknown>("/bank-accounts", body);
+  return BankAccountSchema.parse(data);
+}
+
+export async function deactivateBankAccount(id: string): Promise<void> {
+  await api.patch(`/bank-accounts/${id}/deactivate`);
 }
 
 export async function fetchFiscalYears(): Promise<FiscalYear[]> {

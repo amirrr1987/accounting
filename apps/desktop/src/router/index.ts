@@ -13,6 +13,8 @@ import LoginView from "@/views/LoginView.vue";
 import InvoiceDetailView from "@/views/InvoiceDetailView.vue";
 import InvoiceReturnFormView from "@/views/InvoiceReturnFormView.vue";
 import UnitsView from "@/views/UnitsView.vue";
+import WeightAdjustmentsView from "@/views/WeightAdjustmentsView.vue";
+import BankAccountsView from "@/views/BankAccountsView.vue";
 import PaymentFormView from "@/views/PaymentFormView.vue";
 import ReportsView from "@/views/ReportsView.vue";
 import VoucherDetailView from "@/views/VoucherDetailView.vue";
@@ -44,6 +46,8 @@ export const router = createRouter({
     { path: "/parties", name: "parties", component: PartiesView },
     { path: "/products", name: "products", component: ProductsView },
     { path: "/units", name: "units", component: UnitsView },
+    { path: "/weight-adjustments", name: "weight-adjustments", component: WeightAdjustmentsView },
+    { path: "/bank-accounts", name: "bank-accounts", component: BankAccountsView },
     { path: "/invoices", name: "invoices", component: InvoicesView },
     { path: "/invoices/new", name: "invoice-new", component: InvoiceFormView },
     { path: "/invoices/:id/return", name: "invoice-return", component: InvoiceReturnFormView },

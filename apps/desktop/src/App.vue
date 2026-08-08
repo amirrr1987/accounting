@@ -40,8 +40,10 @@ const navItems = computed((): NavItem[] => [
   { label: ux.nav.parties, icon: "pi pi-users", path: "/parties" },
   { label: ux.nav.products, icon: "pi pi-box", path: "/products" },
   { label: "واحدها", icon: "pi pi-sliders-h", path: "/units" },
+  { label: ux.nav.weightAdjustments, icon: "pi pi-percentage", path: "/weight-adjustments" },
   { label: ux.nav.invoices, icon: "pi pi-file", path: "/invoices" },
   { label: ux.nav.payments, icon: "pi pi-wallet", path: "/payments/new" },
+  { label: ux.nav.bankAccounts, icon: "pi pi-building-columns", path: "/bank-accounts" },
   { label: ux.nav.reports, icon: "pi pi-chart-line", path: "/reports" },
   { label: ux.nav.fiscal, icon: "pi pi-lock", path: "/fiscal-years" },
   ...(isAdminUser.value

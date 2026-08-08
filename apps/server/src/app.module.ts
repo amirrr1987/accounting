@@ -18,6 +18,8 @@ import { ReportModule } from "./report/report.module";
 import { BackupModule } from "./backup/backup.module";
 import { UserModule } from "./user/user.module";
 import { UnitModule } from "./unit/unit.module";
+import { WeightAdjustmentModule } from "./weight-adjustment/weight-adjustment.module";
+import { BankAccountModule } from "./bank-account/bank-account.module";
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { UnitModule } from "./unit/unit.module";
     DashboardModule,
     BackupModule,
     UserModule,
+    WeightAdjustmentModule,
+    BankAccountModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

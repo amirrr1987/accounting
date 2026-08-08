@@ -65,4 +65,6 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "512", name: "بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "SUBTOTAL", parentCode: "51" },
   { code: "51201", name: "بهای تمام‌شده کالای فروش رفته", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
   { code: "51202", name: "زیان فروش زیر بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
+  { code: "51203", name: "کسری بار / کسری انبار", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
+  { code: "41103", name: "درآمد اضافه بار / اضافه انبار", type: "INCOME", nature: "CREDIT", level: "DETAIL", parentCode: "411" },
 ];

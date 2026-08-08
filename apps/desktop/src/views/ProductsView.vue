@@ -10,7 +10,8 @@ import Select from "primevue/select";
 import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
-import type { CreateProductInput, Product, UnitOfMeasure } from "@hesabyar/shared";
+import type { CreateProductInput, Product, ProductPricingMode, UnitOfMeasure } from "@hesabyar/shared";
+import { PRODUCT_PRICING_MODE_LABELS } from "@hesabyar/shared";
 import {
   createProduct,
   deleteProduct,
@@ -39,7 +40,12 @@ const form = reactive({
   stockQty: 0 as number | null,
   vatRatePercent: 9 as number | null,
   defaultUnitId: null as string | null,
+  pricingMode: "AT_INVOICE" as ProductPricingMode,
 });
+
+const pricingModeOptions = Object.entries(PRODUCT_PRICING_MODE_LABELS).map(
+  ([value, label]) => ({ value, label }),
+);
 
 async function load(): Promise<void> {
   loading.value = true;
@@ -71,6 +77,7 @@ function openCreate(): void {
   form.stockQty = 0;
   form.vatRatePercent = 9;
   form.defaultUnitId = null;
+  form.pricingMode = "AT_INVOICE";
   dialogVisible.value = true;
 }
 
@@ -83,6 +90,7 @@ function openEdit(row: Product): void {
   form.stockQty = row.stockQty;
   form.vatRatePercent = Math.round(row.vatRate * 1000) / 10;
   form.defaultUnitId = row.defaultUnitId;
+  form.pricingMode = row.pricingMode;
   dialogVisible.value = true;
 }
 
@@ -99,6 +107,7 @@ async function save(): Promise<void> {
     stockQty: Math.max(0, Math.trunc(form.stockQty ?? 0)),
     vatRate: Math.max(0, Math.min(1, (form.vatRatePercent ?? 0) / 100)),
     defaultUnitId: form.defaultUnitId,
+    pricingMode: form.pricingMode,
     isActive: true,
   };
   try {
@@ -273,6 +282,14 @@ async function deactivate(row: Product): Promise<void> {
           :max="100"
           :min-fraction-digits="0"
           :max-fraction-digits="1"
+          class="w-full"
+        />
+        <label class="text-sm text-[var(--hy-muted)]">سیاست قیمت</label>
+        <Select
+          v-model="form.pricingMode"
+          :options="pricingModeOptions"
+          option-label="label"
+          option-value="value"
           class="w-full"
         />
         <label class="text-sm text-[var(--hy-muted)]">واحد اندازه‌گیری</label>

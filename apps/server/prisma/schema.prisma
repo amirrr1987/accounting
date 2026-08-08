@@ -62,6 +62,22 @@ enum AuditAction {
   RESTORE
 }
 
+enum ProductPricingMode {
+  FIXED
+  AT_INVOICE
+}
+
+enum WeightAdjustmentKind {
+  SHORTAGE
+  SURPLUS
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK_PAYABLE
+  CHECK_RECEIVABLE
+}
+
 model FiscalYear {
   id                  String   @id @default(uuid())
   title               String   @unique
@@ -92,6 +108,7 @@ model Account {
   parent       Account?      @relation("AccountTree", fields: [parentId], references: [id], onDelete: Restrict)
   children     Account[]     @relation("AccountTree")
   voucherLines VoucherLine[]
+  bankAccounts BankAccount[]
 
   @@index([parentId])
   @@index([name])
@@ -110,9 +127,13 @@ model Voucher {
   reversedOfId String?     @unique
   reversedOf   Voucher?    @relation("VoucherReversal", fields: [reversedOfId], references: [id])
   reversal     Voucher?    @relation("VoucherReversal")
+  paymentMethod PaymentMethod?
+  bankAccountId String?
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
 
-  lines   VoucherLine[]
-  invoice Invoice?
+  lines            VoucherLine[]
+  invoice          Invoice?
+  weightAdjustment WeightAdjustment?
 
   @@index([date])
   @@index([kind])
@@ -185,20 +206,22 @@ model UnitOfMeasure {
 }
 
 model Product {
-  id            String   @id @default(uuid())
-  sku           String   @unique
+  id            String             @id @default(uuid())
+  sku           String             @unique
   name          String
   unitPrice     BigInt
-  costPrice     BigInt   @default(0)
-  stockQty      Int      @default(0)
-  vatRate       Float    @default(0.09)
+  costPrice     BigInt             @default(0)
+  stockQty      Int                @default(0)
+  vatRate       Float              @default(0.09)
+  pricingMode   ProductPricingMode @default(AT_INVOICE)
   defaultUnitId String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  defaultUnit  UnitOfMeasure? @relation(fields: [defaultUnitId], references: [id], onDelete: SetNull)
-  invoiceLines InvoiceLine[]
+  defaultUnit        UnitOfMeasure?     @relation(fields: [defaultUnitId], references: [id], onDelete: SetNull)
+  invoiceLines       InvoiceLine[]
+  weightAdjustments  WeightAdjustment[]
 
   @@map("products")
 }
@@ -228,6 +251,7 @@ model Invoice {
   returnedOf Invoice?      @relation("InvoiceReturn", fields: [returnedOfId], references: [id], onDelete: Restrict)
   returns    Invoice[]     @relation("InvoiceReturn")
   lines      InvoiceLine[]
+  weightAdjustments WeightAdjustment[] @relation("SourceInvoice")
 
   @@index([partyId])
   @@index([date])
@@ -241,8 +265,9 @@ model InvoiceLine {
   invoiceId      String
   productId      String
   quantity       Int
-  unitPrice      BigInt
-  vatRate        Float
+  unitPrice          BigInt
+  catalogUnitPrice   BigInt?
+  vatRate            Float
   discountAmount BigInt  @default(0)
   lineNet        BigInt
   lineVat        BigInt
@@ -267,6 +292,45 @@ model InvoiceSequence {
   value Int @default(0)
 
   @@map("invoice_sequences")
+}
+
+model WeightAdjustment {
+  id              String               @id @default(uuid())
+  productId       String
+  kind            WeightAdjustmentKind
+  quantity        Int
+  reason          String
+  date            DateTime             @db.Date
+  costAmount      BigInt
+  sourceInvoiceId String?
+  voucherId       String?              @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sourceInvoice Invoice? @relation("SourceInvoice", fields: [sourceInvoiceId], references: [id], onDelete: SetNull)
+  voucher       Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([date])
+  @@map("weight_adjustments")
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  name          String
+  bankName      String
+  accountNumber String?
+  sheba         String?
+  coaAccountId  String   @unique
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  coaAccount Account  @relation(fields: [coaAccountId], references: [id], onDelete: Restrict)
+  vouchers   Voucher[]
+
+  @@map("bank_accounts")
 }
 
 model User {

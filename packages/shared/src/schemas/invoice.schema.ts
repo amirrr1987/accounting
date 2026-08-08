@@ -28,6 +28,14 @@ export type CreatePartyInput = z.infer<typeof CreatePartySchema>;
 
 export const PartyListSchema = z.array(PartySchema);
 
+export const ProductPricingModeSchema = z.enum(["FIXED", "AT_INVOICE"]);
+export type ProductPricingMode = z.infer<typeof ProductPricingModeSchema>;
+
+export const PRODUCT_PRICING_MODE_LABELS: Record<ProductPricingMode, string> = {
+  FIXED: "قیمت ثابت",
+  AT_INVOICE: "قیمت در لحظه ثبت فاکتور",
+};
+
 export const ProductSchema = z.object({
   id: z.string().uuid(),
   sku: z.string().min(1).max(64),
@@ -36,6 +44,7 @@ export const ProductSchema = z.object({
   costPrice: z.string(),
   stockQty: z.number().int().nonnegative(),
   vatRate: z.number().min(0).max(1),
+  pricingMode: ProductPricingModeSchema,
   defaultUnitId: z.string().uuid().nullable(),
   defaultUnitNameFa: z.string().nullable().optional(),
   isActive: z.boolean(),
@@ -49,10 +58,23 @@ export const CreateProductSchema = z.object({
   costPrice: MoneySchema.optional().default(0n),
   stockQty: z.number().int().nonnegative().optional().default(0),
   vatRate: z.number().min(0).max(1).default(0.09),
+  pricingMode: ProductPricingModeSchema.optional().default("AT_INVOICE"),
   defaultUnitId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional().default(true),
 });
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
+
+/** تعیین قیمت واحد ردیف فاکتور بر اساس سیاست قیمت‌گذاری کالا */
+export function resolveInvoiceLineUnitPrice(
+  product: { unitPrice: bigint; pricingMode: ProductPricingMode },
+  requested: bigint,
+): { unitPrice: bigint; catalogUnitPrice: bigint } {
+  const catalog = product.unitPrice;
+  if (product.pricingMode === "FIXED") {
+    return { unitPrice: catalog, catalogUnitPrice: catalog };
+  }
+  return { unitPrice: requested, catalogUnitPrice: catalog };
+}
 
 export const ProductListSchema = z.array(ProductSchema);
 
@@ -126,6 +148,7 @@ export const InvoiceLineSchema = z.object({
   productName: z.string(),
   quantity: z.number().int(),
   unitPrice: z.string(),
+  catalogUnitPrice: z.string().nullable().optional(),
   vatRate: z.number(),
   discountAmount: z.string(),
   lineNet: z.string(),
