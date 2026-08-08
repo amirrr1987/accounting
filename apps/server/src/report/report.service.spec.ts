@@ -41,4 +41,32 @@ describe("ReportService", () => {
     expect(report.purchases).toHaveLength(1);
     expect(report.sales[0]?.partyName).toBe("مشتری الف");
   });
+
+  it("builds owner status from drawings", async () => {
+    const prisma = {
+      owner: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: "550e8400-e29b-41d4-a716-446655440001",
+            name: "مالک",
+            isActive: true,
+            drawings: [
+              { amount: 500_000n },
+              { amount: 300_000n },
+            ],
+          },
+        ]),
+      },
+    } as unknown as PrismaService;
+
+    const service = new ReportService(prisma);
+    const report = await service.ownerStatus({
+      fromJalali: "1403/01/01",
+      toJalali: "1403/12/29",
+    });
+
+    expect(report.grandTotal).toBe("800000");
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]?.ownerName).toBe("مالک");
+  });
 });

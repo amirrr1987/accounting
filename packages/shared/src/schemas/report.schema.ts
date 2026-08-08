@@ -132,6 +132,124 @@ export const VatReportSchema = z.object({
 });
 export type VatReport = z.infer<typeof VatReportSchema>;
 
+/** آستانه هشدار موجودی کم (تعداد) */
+export const LOW_STOCK_THRESHOLD = 5;
+
+export const DashboardManagementSchema = z.object({
+  totalCash: z.string(),
+  totalBank: z.string(),
+  totalInventory: z.string(),
+  totalChecks: z.string(),
+  grandTotal: z.string(),
+  checksDueThisWeek: z.number().int().nonnegative(),
+  checksOverdue: z.number().int().nonnegative(),
+  lowStockCount: z.number().int().nonnegative(),
+  lowStockProducts: z.array(
+    z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      sku: z.string(),
+      stockQty: z.number().int(),
+    }),
+  ),
+  periodSaleLoss: z.string(),
+  periodOwnerDrawings: z.string(),
+});
+export type DashboardManagement = z.infer<typeof DashboardManagementSchema>;
+
+export const CashFlowRowSchema = z.object({
+  dateJalali: z.string(),
+  kind: z.string(),
+  reference: z.string(),
+  description: z.string(),
+  inflow: z.string(),
+  outflow: z.string(),
+  balance: z.string(),
+});
+export type CashFlowRow = z.infer<typeof CashFlowRowSchema>;
+
+export const CashFlowReportSchema = z.object({
+  fromJalali: z.string(),
+  toJalali: z.string(),
+  openingBalance: z.string(),
+  closingBalance: z.string(),
+  totalInflow: z.string(),
+  totalOutflow: z.string(),
+  netChange: z.string(),
+  rows: z.array(CashFlowRowSchema),
+});
+export type CashFlowReport = z.infer<typeof CashFlowReportSchema>;
+
+export const CheckReportRowSchema = z.object({
+  id: z.string().uuid(),
+  sayyadNumber: z.string(),
+  kind: z.enum(["RECEIVABLE", "PAYABLE"]),
+  status: z.string(),
+  issueJalali: z.string(),
+  dueJalali: z.string(),
+  amount: z.string(),
+  partyName: z.string(),
+  bankName: z.string(),
+});
+export type CheckReportRow = z.infer<typeof CheckReportRowSchema>;
+
+export const CheckReportSchema = z.object({
+  fromJalali: z.string(),
+  toJalali: z.string(),
+  totalReceivable: z.string(),
+  totalPayable: z.string(),
+  dueThisWeek: z.number().int().nonnegative(),
+  overdue: z.number().int().nonnegative(),
+  rows: z.array(CheckReportRowSchema),
+});
+export type CheckReport = z.infer<typeof CheckReportSchema>;
+
+export const InventoryKardexQuerySchema = z.object({
+  productId: z.string().uuid(),
+  fromJalali: jalaliDate,
+  toJalali: jalaliDate,
+});
+export type InventoryKardexQuery = z.infer<typeof InventoryKardexQuerySchema>;
+
+export const InventoryKardexEntrySchema = z.object({
+  dateJalali: z.string(),
+  kind: z.string(),
+  reference: z.string(),
+  description: z.string(),
+  quantityIn: z.number().int().nonnegative(),
+  quantityOut: z.number().int().nonnegative(),
+  balanceQty: z.number().int(),
+});
+export type InventoryKardexEntry = z.infer<typeof InventoryKardexEntrySchema>;
+
+export const InventoryKardexReportSchema = z.object({
+  productId: z.string().uuid(),
+  productName: z.string(),
+  sku: z.string(),
+  fromJalali: z.string(),
+  toJalali: z.string(),
+  openingQty: z.number().int(),
+  closingQty: z.number().int(),
+  entries: z.array(InventoryKardexEntrySchema),
+});
+export type InventoryKardexReport = z.infer<typeof InventoryKardexReportSchema>;
+
+export const OwnerStatusRowSchema = z.object({
+  ownerId: z.string().uuid(),
+  ownerName: z.string(),
+  drawingCount: z.number().int().nonnegative(),
+  totalDrawings: z.string(),
+});
+export type OwnerStatusRow = z.infer<typeof OwnerStatusRowSchema>;
+
+export const OwnerStatusReportSchema = z.object({
+  fromJalali: z.string(),
+  toJalali: z.string(),
+  grandTotal: z.string(),
+  rows: z.array(OwnerStatusRowSchema),
+});
+export type OwnerStatusReport = z.infer<typeof OwnerStatusReportSchema>;
+
 /** برچسب فارسی نوع حساب برای نمودار */
 export const ACCOUNT_TYPE_LABELS: Record<
   z.infer<typeof AccountTypeSchema>,

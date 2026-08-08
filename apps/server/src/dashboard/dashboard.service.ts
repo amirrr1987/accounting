@@ -34,9 +34,10 @@ export class DashboardService {
       activeInvoicesCount,
       accounts,
       grouped,
-      recentVoucherRows,
-      recentInvoiceRows,
+      recentVouchers,
+      recentInvoices,
       charts,
+      management,
     ] = await Promise.all([
       this.prisma.account.count(),
       this.prisma.party.count({ where: { isActive: true } }),
@@ -63,6 +64,7 @@ export class DashboardService {
         take: 5,
       }),
       this.reportService.charts(rangeFrom, rangeTo),
+      this.reportService.managementKpis(rangeFrom, rangeTo, asOfJalali),
     ]);
 
     const movementByAccount = new Map(
@@ -98,7 +100,7 @@ export class DashboardService {
       totalDebit: totalDebit.toString(),
       totalCredit: totalCredit.toString(),
       isBalanced: totalDebit === totalCredit,
-      recentVouchers: recentVoucherRows.map((v) => {
+      recentVouchers: recentVouchers.map((v) => {
         const totalDebitV = v.lines.reduce((acc, l) => acc + l.debit, 0n);
         return {
           id: v.id,
@@ -108,7 +110,7 @@ export class DashboardService {
           totalDebit: totalDebitV.toString(),
         };
       }),
-      recentInvoices: recentInvoiceRows.map((inv) => ({
+      recentInvoices: recentInvoices.map((inv) => ({
         id: inv.id,
         number: inv.number,
         kind: inv.kind,
@@ -117,6 +119,7 @@ export class DashboardService {
         total: inv.total.toString(),
       })),
       charts,
+      management,
     });
   }
 }

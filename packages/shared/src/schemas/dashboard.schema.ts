@@ -62,5 +62,27 @@ export const DashboardSummarySchema = z.object({
       }),
     })
     .optional(),
+  management: z
+    .object({
+      totalCash: z.string(),
+      totalBank: z.string(),
+      totalInventory: z.string(),
+      totalChecks: z.string(),
+      grandTotal: z.string(),
+      checksDueThisWeek: z.number().int().nonnegative(),
+      checksOverdue: z.number().int().nonnegative(),
+      lowStockCount: z.number().int().nonnegative(),
+      lowStockProducts: z.array(
+        z.object({
+          id: z.string().uuid(),
+          name: z.string(),
+          sku: z.string(),
+          stockQty: z.number().int(),
+        }),
+      ),
+      periodSaleLoss: z.string(),
+      periodOwnerDrawings: z.string(),
+    })
+    .optional(),
 });
 export type DashboardSummary = z.infer<typeof DashboardSummarySchema>;

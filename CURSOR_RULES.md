@@ -95,6 +95,10 @@ Customers/suppliers + invoices that auto-post balanced vouchers.
 ### PHASE 6 — DASHBOARD & POLISH
 Dashboard cards, shortcuts, dark mode, installers.
 
+### PHASES 11–18 — EXTENDED FEATURES (see README.md)
+- **11** UOM · **12** Currency · **13** Stock + sale loss · **14** Banks/payments
+- **15** Sayyad checks · **16** Partners · **17** Expenses/drawings · **18** Management reports
+
 ## CURSOR BEHAVIOR
 1. Read the current phase spec fully before touching any file
 2. Identify affected files — list them explicitly before editing

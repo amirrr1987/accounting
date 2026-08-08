@@ -23,6 +23,10 @@ import {
   BalanceSheetReportSchema,
   PartyStatementReportSchema,
   VatReportSchema,
+  CashFlowReportSchema,
+  CheckReportSchema,
+  InventoryKardexReportSchema,
+  OwnerStatusReportSchema,
   DashboardSummarySchema,
   CreateReceiptSchema,
   CreatePaymentSchema,
@@ -70,6 +74,10 @@ import {
   type PartyStatementReport,
   type ProfitLossReport,
   type VatReport,
+  type CashFlowReport,
+  type CheckReport,
+  type InventoryKardexReport,
+  type OwnerStatusReport,
   type AccountTreeNode,
   type CreateAccountInput,
   type CreateInvoiceInput,
@@ -460,6 +468,47 @@ export async function fetchVatReport(
     params: { fromJalali, toJalali },
   });
   return VatReportSchema.parse(data);
+}
+
+export async function fetchCashFlowReport(
+  fromJalali: string,
+  toJalali: string,
+): Promise<CashFlowReport> {
+  const { data } = await api.get<unknown>("/reports/cash-flow", {
+    params: { fromJalali, toJalali },
+  });
+  return CashFlowReportSchema.parse(data);
+}
+
+export async function fetchCheckReport(
+  fromJalali: string,
+  toJalali: string,
+): Promise<CheckReport> {
+  const { data } = await api.get<unknown>("/reports/checks", {
+    params: { fromJalali, toJalali },
+  });
+  return CheckReportSchema.parse(data);
+}
+
+export async function fetchInventoryKardex(
+  productId: string,
+  fromJalali: string,
+  toJalali: string,
+): Promise<InventoryKardexReport> {
+  const { data } = await api.get<unknown>("/reports/inventory-kardex", {
+    params: { productId, fromJalali, toJalali },
+  });
+  return InventoryKardexReportSchema.parse(data);
+}
+
+export async function fetchOwnerStatusReport(
+  fromJalali: string,
+  toJalali: string,
+): Promise<OwnerStatusReport> {
+  const { data } = await api.get<unknown>("/reports/owner-status", {
+    params: { fromJalali, toJalali },
+  });
+  return OwnerStatusReportSchema.parse(data);
 }
 
 export async function createReceipt(

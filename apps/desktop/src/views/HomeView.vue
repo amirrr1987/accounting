@@ -230,6 +230,77 @@ onMounted(() => {
         />
       </div>
 
+      <section
+        v-if="summary?.management"
+        aria-labelledby="management-heading"
+        class="hy-surface p-4"
+      >
+        <h2
+          id="management-heading"
+          class="text-lg font-bold text-[var(--hy-text)] mb-3 mt-0"
+        >
+          {{ ux.dashboard.managementTitle }}
+        </h2>
+        <p class="text-sm text-[var(--hy-muted)] m-0 mb-3">
+          {{ ux.dashboard.totalLiquidity }}:
+          <strong>{{ formatMoneyFa(summary.management.grandTotal) }}</strong>
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div>
+            <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.dashboard.cash }}</p>
+            <p class="font-semibold m-0 mt-1">{{ formatMoneyFa(summary.management.totalCash) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.dashboard.bank }}</p>
+            <p class="font-semibold m-0 mt-1">{{ formatMoneyFa(summary.management.totalBank) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.dashboard.inventory }}</p>
+            <p class="font-semibold m-0 mt-1">{{ formatMoneyFa(summary.management.totalInventory) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.dashboard.checks }}</p>
+            <p class="font-semibold m-0 mt-1">{{ formatMoneyFa(summary.management.totalChecks) }}</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Tag
+            v-if="summary.management.checksDueThisWeek > 0"
+            :value="`${ux.dashboard.checksDue}: ${summary.management.checksDueThisWeek}`"
+            severity="warn"
+            icon="pi pi-calendar"
+          />
+          <Tag
+            v-if="summary.management.checksOverdue > 0"
+            :value="`${ux.dashboard.checksOverdue}: ${summary.management.checksOverdue}`"
+            severity="danger"
+            icon="pi pi-exclamation-triangle"
+          />
+          <Tag
+            v-if="summary.management.lowStockCount > 0"
+            :value="`${ux.dashboard.lowStock}: ${summary.management.lowStockCount}`"
+            severity="warn"
+            icon="pi pi-box"
+          />
+          <Tag
+            v-if="BigInt(summary.management.periodSaleLoss) > 0n"
+            :value="`${ux.dashboard.saleLoss}: ${formatMoneyFa(summary.management.periodSaleLoss)}`"
+            severity="danger"
+          />
+        </div>
+        <ul
+          v-if="summary.management.lowStockProducts.length > 0"
+          class="mt-3 mb-0 text-sm text-[var(--hy-muted)] list-disc pr-5"
+        >
+          <li
+            v-for="p in summary.management.lowStockProducts"
+            :key="p.id"
+          >
+            {{ p.name }} ({{ p.sku }}) — {{ p.stockQty }} عدد
+          </li>
+        </ul>
+      </section>
+
       <section v-if="summary?.charts" aria-labelledby="charts-heading">
         <h2
           id="charts-heading"

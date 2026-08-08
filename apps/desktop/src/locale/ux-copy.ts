@@ -93,6 +93,17 @@ export const ux = {
     emptyInvoicesBody:
       "با صدور فاکتور فروش یا خرید، سند حسابداری به‌صورت خودکار ثبت می‌شود.",
     emptyInvoicesCta: "صدور فاکتور",
+    managementTitle: "موجودی کل و هشدارها",
+    totalLiquidity: "موجودی کل (نقد + بانک + کالا + چک)",
+    cash: "صندوق",
+    bank: "بانک",
+    inventory: "موجودی کالا",
+    checks: "چک در جریان",
+    checksDue: "چک سررسید ۷ روز",
+    checksOverdue: "چک معوق",
+    lowStock: "کالای کم‌موجود",
+    saleLoss: "زیان فروش دوره",
+    ownerDrawings: "برداشت مالک دوره",
   },
 
   vouchers: {
@@ -175,6 +186,14 @@ export const ux = {
     netPayable: "خالص قابل پرداخت",
     salesVat: "فاکتورهای فروش",
     purchaseVat: "فاکتورهای خرید",
+    cashFlow: "گردش نقد",
+    checkReport: "گزارش چک",
+    inventoryKardex: "کاردکس انبار",
+    ownerStatus: "صورت وضعیت مالک",
+    openingBalance: "مانده ابتدای دوره",
+    closingBalance: "مانده پایان دوره",
+    netChange: "خالص تغییر",
+    selectProduct: "انتخاب کالا",
   },
 
   trialBalance: {

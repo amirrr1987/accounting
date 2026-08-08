@@ -59,6 +59,19 @@ describe("DashboardService.getSummary", () => {
         accountTypeMix: [],
         arAp: { receivable: "0", payable: "0" },
       }),
+      managementKpis: jest.fn().mockResolvedValue({
+        totalCash: "1000000",
+        totalBank: "2000000",
+        totalInventory: "3000000",
+        totalChecks: "500000",
+        grandTotal: "6500000",
+        checksDueThisWeek: 2,
+        checksOverdue: 1,
+        lowStockCount: 0,
+        lowStockProducts: [],
+        periodSaleLoss: "0",
+        periodOwnerDrawings: "0",
+      }),
     } as unknown as ReportService;
 
     const service = new DashboardService(
@@ -73,5 +86,6 @@ describe("DashboardService.getSummary", () => {
     expect(summary.isBalanced).toBe(true);
     expect(summary.totalDebit).toBe("100");
     expect(summary.recentVouchers).toHaveLength(1);
+    expect(summary.management?.grandTotal).toBe("6500000");
   });
 });

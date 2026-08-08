@@ -15,6 +15,11 @@ import type {
   ProfitLossReport,
   PartyStatementReport,
   VatReport,
+  CashFlowReport,
+  CheckReport,
+  InventoryKardexReport,
+  OwnerStatusReport,
+  Product,
 } from "@hesabyar/shared";
 import { todayJalali } from "@hesabyar/shared";
 import {
@@ -23,6 +28,11 @@ import {
   fetchPartyStatement,
   fetchProfitLoss,
   fetchVatReport,
+  fetchCashFlowReport,
+  fetchCheckReport,
+  fetchInventoryKardex,
+  fetchOwnerStatusReport,
+  fetchProducts,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { CHART_COLORS } from "@/lib/chart-theme";
@@ -46,6 +56,12 @@ const parties = ref<Party[]>([]);
 const partyId = ref<string | null>(null);
 const partyStatement = ref<PartyStatementReport | null>(null);
 const vatReport = ref<VatReport | null>(null);
+const cashFlow = ref<CashFlowReport | null>(null);
+const checkReport = ref<CheckReport | null>(null);
+const kardex = ref<InventoryKardexReport | null>(null);
+const ownerStatus = ref<OwnerStatusReport | null>(null);
+const products = ref<Product[]>([]);
+const productId = ref<string | null>(null);
 
 const plChart = computed(() => {
   if (!profitLoss.value) return null;
@@ -122,8 +138,63 @@ async function loadVatReport(): Promise<void> {
   }
 }
 
+async function loadCashFlow(): Promise<void> {
+  loading.value = true;
+  try {
+    cashFlow.value = await fetchCashFlowReport(fromJalali.value, toJalali.value);
+  } catch {
+    toast.add({ severity: "error", summary: ux.reports.loadError, life: 4000 });
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadCheckReport(): Promise<void> {
+  loading.value = true;
+  try {
+    checkReport.value = await fetchCheckReport(fromJalali.value, toJalali.value);
+  } catch {
+    toast.add({ severity: "error", summary: ux.reports.loadError, life: 4000 });
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadKardex(): Promise<void> {
+  if (!productId.value) return;
+  loading.value = true;
+  try {
+    kardex.value = await fetchInventoryKardex(
+      productId.value,
+      fromJalali.value,
+      toJalali.value,
+    );
+  } catch {
+    toast.add({ severity: "error", summary: ux.reports.loadError, life: 4000 });
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadOwnerStatus(): Promise<void> {
+  loading.value = true;
+  try {
+    ownerStatus.value = await fetchOwnerStatusReport(
+      fromJalali.value,
+      toJalali.value,
+    );
+  } catch {
+    toast.add({ severity: "error", summary: ux.reports.loadError, life: 4000 });
+  } finally {
+    loading.value = false;
+  }
+}
+
 onMounted(async () => {
-  parties.value = await fetchParties();
+  const [pts, prods] = await Promise.all([fetchParties(), fetchProducts()]);
+  parties.value = pts;
+  products.value = prods.filter((p) => p.isActive);
+  if (products.value[0]) productId.value = products.value[0].id;
   await Promise.all([loadProfitLoss(), loadBalanceSheet(), loadVatReport()]);
 });
 </script>
@@ -398,6 +469,114 @@ onMounted(async () => {
             </div>
           </div>
         </template>
+      </TabPanel>
+
+      <TabPanel :header="ux.reports.cashFlow" value="4">
+        <div class="flex flex-wrap gap-3 mb-4 items-end">
+          <JalaliDatePicker v-model="fromJalali" label="از تاریخ" />
+          <JalaliDatePicker v-model="toJalali" label="تا تاریخ" />
+          <Button :label="ux.reports.run" icon="pi pi-wallet" :loading="loading" @click="loadCashFlow" />
+        </div>
+        <template v-if="cashFlow">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="hy-surface p-4">
+              <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.reports.openingBalance }}</p>
+              <p class="text-lg font-bold m-0 mt-1">{{ formatMoneyFa(cashFlow.openingBalance) }}</p>
+            </div>
+            <div class="hy-surface p-4">
+              <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.reports.closingBalance }}</p>
+              <p class="text-lg font-bold m-0 mt-1">{{ formatMoneyFa(cashFlow.closingBalance) }}</p>
+            </div>
+            <div class="hy-surface p-4">
+              <p class="text-xs text-[var(--hy-muted)] m-0">{{ ux.reports.netChange }}</p>
+              <p class="text-lg font-bold m-0 mt-1">{{ formatMoneyFa(cashFlow.netChange) }}</p>
+            </div>
+          </div>
+          <DataTable :value="cashFlow.rows" size="small" paginator :rows="15">
+            <Column field="dateJalali" header="تاریخ" />
+            <Column field="kind" header="نوع" />
+            <Column field="reference" header="مرجع" />
+            <Column field="description" header="شرح" />
+            <Column header="ورود">
+              <template #body="{ data }">{{ formatMoneyFa(data.inflow) }}</template>
+            </Column>
+            <Column header="خروج">
+              <template #body="{ data }">{{ formatMoneyFa(data.outflow) }}</template>
+            </Column>
+            <Column header="مانده">
+              <template #body="{ data }">{{ formatMoneyFa(data.balance) }}</template>
+            </Column>
+          </DataTable>
+        </template>
+      </TabPanel>
+
+      <TabPanel :header="ux.reports.checkReport" value="5">
+        <div class="flex flex-wrap gap-3 mb-4 items-end">
+          <JalaliDatePicker v-model="fromJalali" label="سررسید از" />
+          <JalaliDatePicker v-model="toJalali" label="سررسید تا" />
+          <Button :label="ux.reports.run" icon="pi pi-money-bill" :loading="loading" @click="loadCheckReport" />
+        </div>
+        <template v-if="checkReport">
+          <div class="flex flex-wrap gap-2 mb-4">
+            <Tag :value="`دریافتنی: ${formatMoneyFa(checkReport.totalReceivable)}`" severity="success" />
+            <Tag :value="`پرداختنی: ${formatMoneyFa(checkReport.totalPayable)}`" severity="warn" />
+            <Tag :value="`سررسید هفته: ${checkReport.dueThisWeek}`" severity="info" />
+            <Tag v-if="checkReport.overdue > 0" :value="`معوق: ${checkReport.overdue}`" severity="danger" />
+          </div>
+          <DataTable :value="checkReport.rows" size="small" paginator :rows="15">
+            <Column field="sayyadNumber" header="صیاد" />
+            <Column field="partyName" header="طرف‌حساب" />
+            <Column field="dueJalali" header="سررسید" />
+            <Column field="status" header="وضعیت" />
+            <Column header="مبلغ">
+              <template #body="{ data }">{{ formatMoneyFa(data.amount) }}</template>
+            </Column>
+          </DataTable>
+        </template>
+      </TabPanel>
+
+      <TabPanel :header="ux.reports.inventoryKardex" value="6">
+        <div class="flex flex-wrap gap-3 mb-4 items-end">
+          <div class="flex flex-col gap-1 min-w-[12rem]">
+            <label class="text-sm text-[var(--hy-muted)]">{{ ux.reports.selectProduct }}</label>
+            <Select v-model="productId" :options="products" option-label="name" option-value="id" filter class="w-full" />
+          </div>
+          <JalaliDatePicker v-model="fromJalali" label="از" />
+          <JalaliDatePicker v-model="toJalali" label="تا" />
+          <Button :label="ux.reports.run" icon="pi pi-box" :loading="loading" @click="loadKardex" />
+        </div>
+        <div v-if="kardex" class="hy-surface p-4">
+          <p class="text-sm text-[var(--hy-muted)]">
+            {{ kardex.productName }} ({{ kardex.sku }}) —
+            موجودی ابتدا: {{ kardex.openingQty }} · پایان: {{ kardex.closingQty }}
+          </p>
+          <DataTable :value="kardex.entries" size="small">
+            <Column field="dateJalali" header="تاریخ" />
+            <Column field="kind" header="نوع" />
+            <Column field="reference" header="مرجع" />
+            <Column field="quantityIn" header="ورود" />
+            <Column field="quantityOut" header="خروج" />
+            <Column field="balanceQty" header="مانده" />
+          </DataTable>
+        </div>
+      </TabPanel>
+
+      <TabPanel :header="ux.reports.ownerStatus" value="7">
+        <div class="flex flex-wrap gap-3 mb-4 items-end">
+          <JalaliDatePicker v-model="fromJalali" label="از" />
+          <JalaliDatePicker v-model="toJalali" label="تا" />
+          <Button :label="ux.reports.run" icon="pi pi-user" :loading="loading" @click="loadOwnerStatus" />
+        </div>
+        <div v-if="ownerStatus" class="hy-surface p-4">
+          <p class="font-semibold mb-3">جمع برداشت: {{ formatMoneyFa(ownerStatus.grandTotal) }}</p>
+          <DataTable :value="ownerStatus.rows" size="small">
+            <Column field="ownerName" header="مالک" />
+            <Column field="drawingCount" header="تعداد" />
+            <Column header="جمع برداشت">
+              <template #body="{ data }">{{ formatMoneyFa(data.totalDrawings) }}</template>
+            </Column>
+          </DataTable>
+        </div>
       </TabPanel>
     </TabView>
   </div>

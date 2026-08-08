@@ -2,14 +2,24 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   ACCOUNT_TYPE_LABELS,
   BalanceSheetReportSchema,
+  CashFlowReportSchema,
+  CheckReportSchema,
+  CHECK_POSTING_CODES,
+  CHECK_STATUS_LABELS,
+  DashboardManagementSchema,
   FinancialChartsSchema,
   INVOICE_POSTING_CODES,
+  InventoryKardexQuerySchema,
+  InventoryKardexReportSchema,
+  LOW_STOCK_THRESHOLD,
+  OwnerStatusReportSchema,
   PartyStatementReportSchema,
   ProfitLossReportSchema,
   ReportAsOfQuerySchema,
   ReportRangeQuerySchema,
   VatReportSchema,
   PartyStatementQuerySchema,
+  PAYMENT_POSTING_CODES,
   balanceToDebitCredit,
   compareJalali,
   gregorianToJalali,
@@ -19,7 +29,13 @@ import {
   jalaliToGregorianDate,
   netFromMovements,
   type BalanceSheetReport,
+  type CashFlowReport,
+  type CheckReport,
+  type DashboardManagement,
   type FinancialCharts,
+  type InventoryKardexQuery,
+  type InventoryKardexReport,
+  type OwnerStatusReport,
   type PartyStatementQuery,
   type PartyStatementReport,
   type ProfitLossReport,
@@ -439,5 +455,471 @@ export class ReportService {
       sales,
       purchases,
     });
+  }
+
+  async managementKpis(
+    fromJalali: string,
+    toJalali: string,
+    asOfJalali: string,
+  ): Promise<DashboardManagement> {
+    const asOf = jalaliToGregorianDate(asOfJalali);
+    const from = jalaliToGregorianDate(fromJalali);
+    const to = jalaliToGregorianDate(toJalali);
+
+    const weekLater = new Date(asOf);
+    weekLater.setDate(weekLater.getDate() + 7);
+
+    const [
+      cashBal,
+      bankBal,
+      inventoryBal,
+      checksBal,
+      lowStockProducts,
+      saleLoss,
+      ownerDrawings,
+      checksDueThisWeek,
+      checksOverdue,
+    ] = await Promise.all([
+      this.accountBalanceByCode(PAYMENT_POSTING_CODES.cash, asOf),
+      this.totalBankBalance(asOf),
+      this.accountBalanceByCode(INVOICE_POSTING_CODES.inventory, asOf),
+      this.totalChecksBalance(asOf),
+      this.prisma.product.findMany({
+        where: {
+          isActive: true,
+          stockQty: { lte: LOW_STOCK_THRESHOLD },
+        },
+        orderBy: { stockQty: "asc" },
+        take: 10,
+        select: { id: true, name: true, sku: true, stockQty: true },
+      }),
+      this.periodAccountNet("51202", from, to),
+      this.prisma.ownerDrawing.aggregate({
+        where: { date: { gte: from, lte: to } },
+        _sum: { amount: true },
+      }),
+      this.prisma.check.count({
+        where: {
+          dueDate: { gte: asOf, lte: weekLater },
+          status: { in: ["IN_PORTFOLIO", "DEPOSITED"] },
+        },
+      }),
+      this.prisma.check.count({
+        where: {
+          dueDate: { lt: asOf },
+          status: { in: ["IN_PORTFOLIO", "DEPOSITED"] },
+        },
+      }),
+    ]);
+
+    const inventory =
+      inventoryBal > 0n ? inventoryBal : await this.inventoryFromProducts();
+
+    const grandTotal = cashBal + bankBal + inventory + checksBal;
+
+    return DashboardManagementSchema.parse({
+      totalCash: cashBal.toString(),
+      totalBank: bankBal.toString(),
+      totalInventory: inventory.toString(),
+      totalChecks: checksBal.toString(),
+      grandTotal: grandTotal.toString(),
+      checksDueThisWeek,
+      checksOverdue,
+      lowStockCount: lowStockProducts.length,
+      lowStockProducts,
+      periodSaleLoss: saleLoss.toString(),
+      periodOwnerDrawings: (ownerDrawings._sum.amount ?? 0n).toString(),
+    });
+  }
+
+  async cashFlow(query: ReportRangeQuery): Promise<CashFlowReport> {
+    const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
+    const from = jalaliToGregorianDate(fromJalali);
+    const to = jalaliToGregorianDate(toJalali);
+    const cashAccountIds = await this.liquidAccountIds();
+
+    const dayBeforeFrom = new Date(from);
+    dayBeforeFrom.setDate(dayBeforeFrom.getDate() - 1);
+
+    const openingBalance = await this.sumLiquidBalance(
+      cashAccountIds,
+      dayBeforeFrom,
+    );
+
+    const lines = await this.prisma.voucherLine.findMany({
+      where: {
+        accountId: { in: cashAccountIds },
+        voucher: { date: { gte: from, lte: to } },
+      },
+      include: { voucher: true, account: true },
+      orderBy: [{ voucher: { date: "asc" } }, { lineOrder: "asc" }],
+    });
+
+    let running = openingBalance;
+    let totalInflow = 0n;
+    let totalOutflow = 0n;
+    const rows = [];
+
+    for (const line of lines) {
+      const inflow = line.credit;
+      const outflow = line.debit;
+      running += inflow - outflow;
+      totalInflow += inflow;
+      totalOutflow += outflow;
+
+      rows.push({
+        dateJalali: gregorianToJalali(line.voucher.date),
+        kind: line.voucher.kind,
+        reference: line.voucher.number,
+        description: line.description || line.voucher.description,
+        inflow: inflow.toString(),
+        outflow: outflow.toString(),
+        balance: running.toString(),
+      });
+    }
+
+    return CashFlowReportSchema.parse({
+      fromJalali,
+      toJalali,
+      openingBalance: openingBalance.toString(),
+      closingBalance: running.toString(),
+      totalInflow: totalInflow.toString(),
+      totalOutflow: totalOutflow.toString(),
+      netChange: (totalInflow - totalOutflow).toString(),
+      rows,
+    });
+  }
+
+  async checkReport(query: ReportRangeQuery): Promise<CheckReport> {
+    const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
+    const from = jalaliToGregorianDate(fromJalali);
+    const to = jalaliToGregorianDate(toJalali);
+    const asOf = new Date();
+
+    const weekLater = new Date(asOf);
+    weekLater.setDate(weekLater.getDate() + 7);
+
+    const checks = await this.prisma.check.findMany({
+      where: { dueDate: { gte: from, lte: to } },
+      include: { party: true },
+      orderBy: [{ dueDate: "asc" }, { sayyadNumber: "asc" }],
+    });
+
+    let totalReceivable = 0n;
+    let totalPayable = 0n;
+
+    const rows = checks.map((c) => {
+      if (c.kind === "RECEIVABLE") totalReceivable += c.amount;
+      else totalPayable += c.amount;
+
+      return {
+        id: c.id,
+        sayyadNumber: c.sayyadNumber,
+        kind: c.kind,
+        status: CHECK_STATUS_LABELS[c.status] ?? c.status,
+        issueJalali: gregorianToJalali(c.issueDate),
+        dueJalali: gregorianToJalali(c.dueDate),
+        amount: c.amount.toString(),
+        partyName: c.party.name,
+        bankName: c.bankName,
+      };
+    });
+
+    const [dueThisWeek, overdue] = await Promise.all([
+      this.prisma.check.count({
+        where: {
+          dueDate: { gte: asOf, lte: weekLater },
+          status: { in: ["IN_PORTFOLIO", "DEPOSITED"] },
+        },
+      }),
+      this.prisma.check.count({
+        where: {
+          dueDate: { lt: asOf },
+          status: { in: ["IN_PORTFOLIO", "DEPOSITED"] },
+        },
+      }),
+    ]);
+
+    return CheckReportSchema.parse({
+      fromJalali,
+      toJalali,
+      totalReceivable: totalReceivable.toString(),
+      totalPayable: totalPayable.toString(),
+      dueThisWeek,
+      overdue,
+      rows,
+    });
+  }
+
+  async inventoryKardex(
+    query: InventoryKardexQuery,
+  ): Promise<InventoryKardexReport> {
+    const parsed = InventoryKardexQuerySchema.parse(query);
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: parsed.productId },
+    });
+    if (!product) {
+      throw new NotFoundException("کالا یافت نشد");
+    }
+
+    type Movement = {
+      date: Date;
+      kind: string;
+      reference: string;
+      description: string;
+      qtyIn: number;
+      qtyOut: number;
+    };
+
+    const movements: Movement[] = [];
+
+    const invoiceLines = await this.prisma.invoiceLine.findMany({
+      where: {
+        productId: product.id,
+        invoice: { deletedAt: null },
+      },
+      include: { invoice: true },
+      orderBy: [{ invoice: { date: "asc" } }],
+    });
+
+    for (const line of invoiceLines) {
+      const inv = line.invoice;
+      let qtyIn = 0;
+      let qtyOut = 0;
+      let kindLabel = "";
+
+      switch (inv.kind) {
+        case "PURCHASE":
+          qtyIn = line.quantity;
+          kindLabel = "خرید";
+          break;
+        case "PURCHASE_RETURN":
+          qtyOut = line.quantity;
+          kindLabel = "برگشت خرید";
+          break;
+        case "SALE":
+          qtyOut = line.quantity;
+          kindLabel = "فروش";
+          break;
+        case "SALE_RETURN":
+          qtyIn = line.quantity;
+          kindLabel = "برگشت فروش";
+          break;
+      }
+
+      if (qtyIn === 0 && qtyOut === 0) continue;
+
+      movements.push({
+        date: inv.date,
+        kind: kindLabel,
+        reference: inv.number,
+        description: inv.description || kindLabel,
+        qtyIn,
+        qtyOut,
+      });
+    }
+
+    const adjustments = await this.prisma.weightAdjustment.findMany({
+      where: { productId: product.id },
+      orderBy: { date: "asc" },
+    });
+
+    for (const adj of adjustments) {
+      movements.push({
+        date: adj.date,
+        kind: adj.kind === "SHORTAGE" ? "کسر بار" : "اضافه بار",
+        reference: adj.id.slice(0, 8),
+        description: adj.reason,
+        qtyIn: adj.kind === "SURPLUS" ? adj.quantity : 0,
+        qtyOut: adj.kind === "SHORTAGE" ? adj.quantity : 0,
+      });
+    }
+
+    movements.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    let runningQty = 0;
+    for (const m of movements) {
+      const jalali = gregorianToJalali(m.date);
+      if (compareJalali(jalali, parsed.fromJalali) < 0) {
+        runningQty += m.qtyIn - m.qtyOut;
+      }
+    }
+    const openingQty = runningQty;
+
+    const entries = [];
+    for (const m of movements) {
+      const jalali = gregorianToJalali(m.date);
+      if (compareJalali(jalali, parsed.fromJalali) < 0) continue;
+      if (compareJalali(jalali, parsed.toJalali) > 0) continue;
+
+      runningQty += m.qtyIn - m.qtyOut;
+      entries.push({
+        dateJalali: jalali,
+        kind: m.kind,
+        reference: m.reference,
+        description: m.description,
+        quantityIn: m.qtyIn,
+        quantityOut: m.qtyOut,
+        balanceQty: runningQty,
+      });
+    }
+
+    return InventoryKardexReportSchema.parse({
+      productId: product.id,
+      productName: product.name,
+      sku: product.sku,
+      fromJalali: parsed.fromJalali,
+      toJalali: parsed.toJalali,
+      openingQty,
+      closingQty: runningQty,
+      entries,
+    });
+  }
+
+  async ownerStatus(query: ReportRangeQuery): Promise<OwnerStatusReport> {
+    const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
+    const from = jalaliToGregorianDate(fromJalali);
+    const to = jalaliToGregorianDate(toJalali);
+
+    const owners = await this.prisma.owner.findMany({
+      where: { isActive: true },
+      include: {
+        drawings: {
+          where: { date: { gte: from, lte: to } },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    let grandTotal = 0n;
+    const rows = owners
+      .map((owner) => {
+        const total = owner.drawings.reduce((s, d) => s + d.amount, 0n);
+        if (total === 0n) return null;
+        grandTotal += total;
+        return {
+          ownerId: owner.id,
+          ownerName: owner.name,
+          drawingCount: owner.drawings.length,
+          totalDrawings: total.toString(),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    return OwnerStatusReportSchema.parse({
+      fromJalali,
+      toJalali,
+      grandTotal: grandTotal.toString(),
+      rows,
+    });
+  }
+
+  private async liquidAccountIds(): Promise<string[]> {
+    const cash = await this.prisma.account.findUnique({
+      where: { code: PAYMENT_POSTING_CODES.cash },
+    });
+    const banks = await this.prisma.bankAccount.findMany({
+      where: { isActive: true },
+      select: { coaAccountId: true },
+    });
+    const ids = [
+      cash?.id,
+      ...banks.map((b) => b.coaAccountId),
+    ].filter((id): id is string => Boolean(id));
+    return ids;
+  }
+
+  private async sumLiquidBalance(
+    accountIds: string[],
+    asOf: Date,
+  ): Promise<bigint> {
+    if (accountIds.length === 0) return 0n;
+
+    const grouped = await this.prisma.voucherLine.groupBy({
+      by: ["accountId"],
+      where: {
+        accountId: { in: accountIds },
+        voucher: { date: { lte: asOf } },
+      },
+      _sum: { debit: true, credit: true },
+    });
+
+    let total = 0n;
+    for (const g of grouped) {
+      const debit = g._sum.debit ?? 0n;
+      const credit = g._sum.credit ?? 0n;
+      total += debit - credit;
+    }
+    return total;
+  }
+
+  private async accountBalanceByCode(
+    code: string,
+    asOf: Date,
+  ): Promise<bigint> {
+    const account = await this.prisma.account.findUnique({ where: { code } });
+    if (!account) return 0n;
+    return this.sumLiquidBalance([account.id], asOf);
+  }
+
+  private async totalBankBalance(asOf: Date): Promise<bigint> {
+    const banks = await this.prisma.bankAccount.findMany({
+      where: { isActive: true },
+      select: { coaAccountId: true },
+    });
+    return this.sumLiquidBalance(
+      banks.map((b) => b.coaAccountId),
+      asOf,
+    );
+  }
+
+  private async totalChecksBalance(asOf: Date): Promise<bigint> {
+    const codes = [
+      CHECK_POSTING_CODES.checksReceivable,
+      CHECK_POSTING_CODES.checksInCollection,
+    ];
+    let total = 0n;
+    for (const code of codes) {
+      total += await this.accountBalanceByCode(code, asOf);
+    }
+    return total;
+  }
+
+  private async inventoryFromProducts(): Promise<bigint> {
+    const products = await this.prisma.product.findMany({
+      where: { isActive: true },
+      select: { stockQty: true, costPrice: true },
+    });
+    return products.reduce(
+      (sum, p) => sum + BigInt(p.stockQty) * p.costPrice,
+      0n,
+    );
+  }
+
+  private async periodAccountNet(
+    code: string,
+    from: Date,
+    to: Date,
+  ): Promise<bigint> {
+    const account = await this.prisma.account.findUnique({ where: { code } });
+    if (!account) return 0n;
+
+    const grouped = await this.prisma.voucherLine.groupBy({
+      by: ["accountId"],
+      where: {
+        accountId: account.id,
+        voucher: { date: { gte: from, lte: to } },
+      },
+      _sum: { debit: true, credit: true },
+    });
+
+    const mov = grouped[0];
+    if (!mov) return 0n;
+    return netFromMovements(
+      "DEBIT",
+      mov._sum.debit ?? 0n,
+      mov._sum.credit ?? 0n,
+    );
   }
 }

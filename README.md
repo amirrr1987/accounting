@@ -70,8 +70,25 @@ Requires Rust toolchain + WebView2 (Windows).
 - `GET /parties` · `POST /parties` · `PATCH /parties/:id` · `DELETE /parties/:id`
 - `GET /products` · `POST /products` · `PATCH /products/:id` · `DELETE /products/:id`
 - `GET /invoices` · `POST /invoices` · `POST /invoices/preview` · `DELETE /invoices/:id` (soft-delete + reverse voucher)
+- `GET /reports/profit-loss` · `GET /reports/balance-sheet` · `GET /reports/party-statement` · `GET /reports/vat`
+- `GET /reports/cash-flow` · `GET /reports/checks` · `GET /reports/inventory-kardex` · `GET /reports/owner-status`
+- `GET /expenses` · `POST /expenses` · `GET /expense-categories` · `GET /owner-drawings` · `POST /owner-drawings`
+- `GET /checks` · `POST /checks` · `GET /checks/summary`
+- `GET /settings/business` · `PATCH /settings/business`
 
-## Workspace
+## Phases (11–18)
+
+| Phase | Feature |
+|-------|---------|
+| 11 | Units of measure (UOM) |
+| 12 | Currency display (pending) |
+| 13 | Stock control + sale loss |
+| 14 | Bank accounts + payment methods |
+| 15 | Sayyad checks |
+| 16 | Partners + split inventory (pending) |
+| 17 | Expenses + owner drawings + weight adjustment |
+| 18 | Management dashboard + integrated reports |
+
 
 ```
 apps/desktop   # Tauri + Vue
