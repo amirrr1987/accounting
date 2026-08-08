@@ -42,6 +42,7 @@ import {
 } from "@/lib/api";
 import { downloadBackupJson, readBackupFile } from "@/lib/backup-download";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { useAuth } from "@/composables/useAuth";
@@ -586,7 +587,29 @@ function onRestoreFile(event: Event): void {
             @click="openUserDialog"
           />
         </div>
-        <DataTable :value="users" :loading="loading" size="small">
+        <ul
+          v-if="isMobile"
+          class="list-none m-0 p-0 space-y-2"
+        >
+          <li v-for="user in users" :key="user.id" class="hy-surface overflow-hidden">
+            <MobileListCard
+              :title="user.username"
+              :subtitle="USER_ROLE_LABELS[user.role as UserRole]"
+              :meta="user.isActive ? ux.common.active : ux.common.inactive"
+              :meta-severity="user.isActive ? 'success' : 'secondary'"
+            />
+            <div class="px-4 pb-3">
+              <Button
+                :label="user.isActive ? 'غیرفعال' : 'فعال'"
+                text
+                size="small"
+                class="min-h-10"
+                @click="toggleUserActive(user)"
+              />
+            </div>
+          </li>
+        </ul>
+        <DataTable v-else :value="users" :loading="loading" size="small">
           <Column field="username" header="نام کاربری" />
           <Column header="نقش">
             <template #body="{ data }">
@@ -615,7 +638,20 @@ function onRestoreFile(event: Event): void {
       </TabPanel>
 
       <TabPanel v-if="isAdmin" header="رویدادنگاری" value="audit">
-        <DataTable :value="auditLogs" :loading="loading" size="small" paginator :rows="15">
+        <ul
+          v-if="isMobile"
+          class="list-none m-0 p-0 space-y-2"
+        >
+          <li v-for="(log, i) in auditLogs" :key="`${log.createdAt}-${i}`">
+            <MobileListCard
+              :title="`${log.username} · ${AUDIT_ACTION_LABELS[log.action as AuditAction] ?? log.action}`"
+              :subtitle="`${new Date(log.createdAt).toLocaleString('fa-IR')} · ${log.entity}`"
+              :meta="log.detail || '—'"
+              meta-severity="secondary"
+            />
+          </li>
+        </ul>
+        <DataTable v-else :value="auditLogs" :loading="loading" size="small" paginator :rows="15">
           <Column header="زمان">
             <template #body="{ data }">
               {{ new Date(data.createdAt).toLocaleString("fa-IR") }}

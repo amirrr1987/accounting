@@ -12,10 +12,13 @@ import { fetchAccounts, fetchVoucher } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { printVoucher } from "@/lib/voucher-print";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
+import { useIsMobileRef } from "@/composables/useViewport";
 import { ux } from "@/locale/ux-copy";
 
 const route = useRoute();
 const toast = useToast();
+const isMobile = useIsMobileRef();
 const voucher = ref<Voucher | null>(null);
 const accountNames = ref<Map<string, string>>(new Map());
 const loading = ref(true);
@@ -50,7 +53,7 @@ function print(): void {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
       v-if="voucher"
@@ -73,7 +76,25 @@ function print(): void {
       <p class="text-sm text-[var(--hy-muted)]">
         تاریخ: {{ voucher.dateJalali }}
       </p>
-      <DataTable :value="voucher.lines" class="mt-3">
+      <ul
+        v-if="isMobile"
+        class="list-none m-0 p-0 space-y-2 mt-3"
+      >
+        <li v-for="(line, i) in voucher.lines" :key="i">
+          <MobileListCard
+            :title="accountNames.get(line.accountId) ?? line.accountId"
+            :subtitle="line.description || '—'"
+            :meta="
+              line.debit !== '0'
+                ? `ب ${formatMoneyFa(line.debit)}`
+                : `بس ${formatMoneyFa(line.credit)}`
+            "
+            meta-severity="info"
+          />
+        </li>
+      </ul>
+
+      <DataTable v-else :value="voucher.lines" class="mt-3">
         <Column header="حساب">
           <template #body="{ data }">
             {{ accountNames.get(data.accountId) ?? data.accountId }}

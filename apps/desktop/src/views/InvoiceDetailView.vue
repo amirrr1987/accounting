@@ -16,11 +16,14 @@ import { fetchInvoice } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { printInvoice } from "@/lib/invoice-print";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
+import { useIsMobileRef } from "@/composables/useViewport";
 import { ux } from "@/locale/ux-copy";
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const isMobile = useIsMobileRef();
 const invoice = ref<Invoice | null>(null);
 const loading = ref(true);
 
@@ -50,7 +53,7 @@ function goReturn(): void {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
       v-if="invoice"
@@ -91,7 +94,20 @@ function goReturn(): void {
       <p v-if="invoice.returnReason" class="text-sm text-amber-800 mt-2">
         دلیل مرجوعی: {{ invoice.returnReason }}
       </p>
-      <DataTable :value="invoice.lines" class="mt-3">
+      <ul
+        v-if="isMobile"
+        class="list-none m-0 p-0 space-y-2 mt-3"
+      >
+        <li v-for="line in invoice.lines" :key="line.id">
+          <MobileListCard
+            :title="line.productName"
+            :subtitle="`${line.quantity}${line.unitNameFa ? ` ${line.unitNameFa}` : ''} × ${formatMoneyFa(line.unitPrice)}`"
+            :meta="formatMoneyFa(line.lineTotal)"
+          />
+        </li>
+      </ul>
+
+      <DataTable v-else :value="invoice.lines" class="mt-3">
         <Column field="productName" header="کالا" />
         <Column header="تعداد">
           <template #body="{ data }">

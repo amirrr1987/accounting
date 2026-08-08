@@ -12,6 +12,7 @@ import { fetchAccounts, fetchLedger } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { exportLedgerExcel, exportLedgerPdf } from "@/lib/ledger-export";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
@@ -154,7 +155,22 @@ function onPdf(): void {
         <span class="font-bold">مانده پایان: {{ formatMoneyFa(report.closingBalance) }}</span>
       </div>
 
+      <ul
+        v-if="isMobile"
+        class="list-none m-0 p-0 space-y-2"
+      >
+        <li v-for="(row, i) in report.entries" :key="i">
+          <MobileListCard
+            :title="row.description || `سند ${row.voucherNumber}`"
+            :subtitle="`${row.dateJalali} · ${row.voucherNumber}`"
+            :meta="formatMoneyFa(row.balance)"
+            meta-severity="info"
+          />
+        </li>
+      </ul>
+
       <DataTable
+        v-else
         :value="report.entries"
         :loading="loading"
         paginator

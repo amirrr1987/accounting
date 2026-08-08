@@ -20,6 +20,7 @@ import {
 } from "@hesabyar/shared";
 import { createVoucher, fetchAccounts } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { useIsMobileRef } from "@/composables/useViewport";
 
 type DraftLine = {
   key: number;
@@ -31,6 +32,7 @@ type DraftLine = {
 
 const toast = useToast();
 const router = useRouter();
+const isMobile = useIsMobileRef();
 
 const accounts = ref<Account[]>([]);
 const saving = ref(false);
@@ -151,7 +153,7 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-6 space-y-4" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'p-6 space-y-4'" dir="rtl">
     <Toast />
 
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -195,7 +197,61 @@ async function save(): Promise<void> {
       </span>
     </div>
 
-    <DataTable :value="lines" class="text-sm">
+    <ul
+      v-if="isMobile"
+      class="list-none m-0 p-0 space-y-3"
+    >
+      <li
+        v-for="line in lines"
+        :key="line.key"
+        class="hy-surface p-4 space-y-3"
+      >
+        <Select
+          v-model="line.accountId"
+          :options="accountOptions"
+          option-label="label"
+          option-value="value"
+          filter
+          placeholder="انتخاب حساب تفصیلی"
+          class="w-full"
+        />
+        <InputText v-model="line.description" placeholder="شرح" class="w-full" />
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--hy-muted)]">بدهکار</label>
+            <InputNumber
+              v-model="line.debit"
+              :min="0"
+              locale="fa-IR"
+              class="w-full"
+              @update:model-value="onDebitChange(line)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--hy-muted)]">بستانکار</label>
+            <InputNumber
+              v-model="line.credit"
+              :min="0"
+              locale="fa-IR"
+              class="w-full"
+              @update:model-value="onCreditChange(line)"
+            />
+          </div>
+        </div>
+        <Button
+          icon="pi pi-trash"
+          text
+          rounded
+          severity="danger"
+          :disabled="lines.length <= 2"
+          label="حذف ردیف"
+          class="min-h-10"
+          @click="removeLine(line.key)"
+        />
+      </li>
+    </ul>
+
+    <DataTable v-else :value="lines" class="text-sm">
       <Column header="حساب" style="min-width: 16rem">
         <template #body="{ data }">
           <Select

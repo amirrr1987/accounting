@@ -40,6 +40,7 @@ import { formatMoneyFa } from "@/lib/money";
 import { CHART_COLORS } from "@/lib/chart-theme";
 import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import HyBarChart from "@/components/charts/HyBarChart.vue";
 import HyDoughnutChart from "@/components/charts/HyDoughnutChart.vue";
@@ -303,24 +304,50 @@ onMounted(async () => {
             </div>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DataTable :value="profitLoss.incomeRows" size="small">
-              <Column field="code" header="کد" />
-              <Column field="name" header="درآمد" />
-              <Column header="مبلغ">
-                <template #body="{ data }">
-                  {{ formatMoneyFa(data.amount) }}
-                </template>
-              </Column>
-            </DataTable>
-            <DataTable :value="profitLoss.expenseRows" size="small">
-              <Column field="code" header="کد" />
-              <Column field="name" header="هزینه" />
-              <Column header="مبلغ">
-                <template #body="{ data }">
-                  {{ formatMoneyFa(data.amount) }}
-                </template>
-              </Column>
-            </DataTable>
+            <div>
+              <h3 v-if="isMobile" class="font-bold text-sm mb-2 mt-0">درآمد</h3>
+              <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+                <li v-for="row in profitLoss.incomeRows" :key="row.code">
+                  <MobileListCard
+                    :title="row.name"
+                    :subtitle="row.code"
+                    :meta="formatMoneyFa(row.amount)"
+                    meta-severity="success"
+                  />
+                </li>
+              </ul>
+              <DataTable v-else :value="profitLoss.incomeRows" size="small">
+                <Column field="code" header="کد" />
+                <Column field="name" header="درآمد" />
+                <Column header="مبلغ">
+                  <template #body="{ data }">
+                    {{ formatMoneyFa(data.amount) }}
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
+            <div>
+              <h3 v-if="isMobile" class="font-bold text-sm mb-2 mt-0">هزینه</h3>
+              <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+                <li v-for="row in profitLoss.expenseRows" :key="row.code">
+                  <MobileListCard
+                    :title="row.name"
+                    :subtitle="row.code"
+                    :meta="formatMoneyFa(row.amount)"
+                    meta-severity="danger"
+                  />
+                </li>
+              </ul>
+              <DataTable v-else :value="profitLoss.expenseRows" size="small">
+                <Column field="code" header="کد" />
+                <Column field="name" header="هزینه" />
+                <Column header="مبلغ">
+                  <template #body="{ data }">
+                    {{ formatMoneyFa(data.amount) }}
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
           </div>
         </template>
       </TabPanel>
@@ -370,7 +397,16 @@ onMounted(async () => {
             class="hy-surface p-4 mb-3"
           >
             <h3 class="font-bold mt-0">{{ section.label }}</h3>
-            <DataTable :value="section.rows" size="small">
+            <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+              <li v-for="row in section.rows" :key="row.code">
+                <MobileListCard
+                  :title="row.name"
+                  :subtitle="row.code"
+                  :meta="formatMoneyFa(row.amount)"
+                />
+              </li>
+            </ul>
+            <DataTable v-else :value="section.rows" size="small">
               <Column field="code" header="کد" />
               <Column field="name" header="حساب" />
               <Column header="مانده">
@@ -413,7 +449,19 @@ onMounted(async () => {
             مانده افتتاحیه: {{ formatMoneyFa(partyStatement.openingBalance) }}
             · مانده پایان: {{ formatMoneyFa(partyStatement.closingBalance) }}
           </p>
-          <DataTable :value="partyStatement.entries" size="small">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2 mt-3">
+            <li v-for="(entry, i) in partyStatement.entries" :key="i">
+              <MobileListCard
+                :title="entry.description || '—'"
+                :subtitle="`${entry.dateJalali} · سند ${entry.voucherNumber}`"
+                :meta="formatMoneyFa(entry.balance)"
+                :meta-severity="
+                  BigInt(entry.balance) >= 0n ? 'success' : 'danger'
+                "
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="partyStatement.entries" size="small">
             <Column field="dateJalali" header="تاریخ" />
             <Column field="voucherNumber" header="سند" />
             <Column field="description" header="شرح" />
@@ -481,7 +529,17 @@ onMounted(async () => {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="hy-surface p-4">
               <h3 class="font-bold mt-0">{{ ux.reports.salesVat }}</h3>
-              <DataTable :value="vatReport.sales" size="small" paginator :rows="10">
+              <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+                <li v-for="(row, i) in vatReport.sales" :key="i">
+                  <MobileListCard
+                    :title="row.partyName"
+                    :subtitle="`${row.dateJalali} · ${row.invoiceNumber}`"
+                    :meta="formatMoneyFa(row.vatAmount)"
+                    meta-severity="success"
+                  />
+                </li>
+              </ul>
+              <DataTable v-else :value="vatReport.sales" size="small" paginator :rows="10">
                 <Column field="dateJalali" header="تاریخ" />
                 <Column field="invoiceNumber" header="فاکتور" />
                 <Column field="partyName" header="مشتری" />
@@ -499,7 +557,17 @@ onMounted(async () => {
             </div>
             <div class="hy-surface p-4">
               <h3 class="font-bold mt-0">{{ ux.reports.purchaseVat }}</h3>
-              <DataTable :value="vatReport.purchases" size="small" paginator :rows="10">
+              <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+                <li v-for="(row, i) in vatReport.purchases" :key="i">
+                  <MobileListCard
+                    :title="row.partyName"
+                    :subtitle="`${row.dateJalali} · ${row.invoiceNumber}`"
+                    :meta="formatMoneyFa(row.vatAmount)"
+                    meta-severity="danger"
+                  />
+                </li>
+              </ul>
+              <DataTable v-else :value="vatReport.purchases" size="small" paginator :rows="10">
                 <Column field="dateJalali" header="تاریخ" />
                 <Column field="invoiceNumber" header="فاکتور" />
                 <Column field="partyName" header="تأمین‌کننده" />
@@ -540,7 +608,16 @@ onMounted(async () => {
               <p class="text-lg font-bold m-0 mt-1">{{ formatMoneyFa(cashFlow.netChange) }}</p>
             </div>
           </div>
-          <DataTable :value="cashFlow.rows" size="small" paginator :rows="15">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+            <li v-for="(row, i) in cashFlow.rows" :key="i">
+              <MobileListCard
+                :title="row.description || row.reference"
+                :subtitle="`${row.dateJalali} · ${row.kind}`"
+                :meta="formatMoneyFa(row.balance)"
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="cashFlow.rows" size="small" paginator :rows="15">
             <Column field="dateJalali" header="تاریخ" />
             <Column field="kind" header="نوع" />
             <Column field="reference" header="مرجع" />
@@ -571,7 +648,17 @@ onMounted(async () => {
             <Tag :value="`سررسید هفته: ${checkReport.dueThisWeek}`" severity="info" />
             <Tag v-if="checkReport.overdue > 0" :value="`معوق: ${checkReport.overdue}`" severity="danger" />
           </div>
-          <DataTable :value="checkReport.rows" size="small" paginator :rows="15">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+            <li v-for="(row, i) in checkReport.rows" :key="i">
+              <MobileListCard
+                :title="row.partyName"
+                :subtitle="`${row.dueJalali} · ${row.status}`"
+                :meta="formatMoneyFa(row.amount)"
+                meta-severity="info"
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="checkReport.rows" size="small" paginator :rows="15">
             <Column field="sayyadNumber" header="صیاد" />
             <Column field="partyName" header="طرف‌حساب" />
             <Column field="dueJalali" header="سررسید" />
@@ -598,7 +685,16 @@ onMounted(async () => {
             {{ kardex.productName }} ({{ kardex.sku }}) —
             موجودی ابتدا: {{ kardex.openingQty }} · پایان: {{ kardex.closingQty }}
           </p>
-          <DataTable :value="kardex.entries" size="small">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2 mt-3">
+            <li v-for="(entry, i) in kardex.entries" :key="i">
+              <MobileListCard
+                :title="entry.kind"
+                :subtitle="`${entry.dateJalali} · ${entry.reference}`"
+                :meta="`مانده: ${entry.balanceQty}`"
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="kardex.entries" size="small">
             <Column field="dateJalali" header="تاریخ" />
             <Column field="kind" header="نوع" />
             <Column field="reference" header="مرجع" />
@@ -617,7 +713,16 @@ onMounted(async () => {
         </div>
         <div v-if="ownerStatus" class="hy-surface p-4">
           <p class="font-semibold mb-3">جمع برداشت: {{ formatMoneyFa(ownerStatus.grandTotal) }}</p>
-          <DataTable :value="ownerStatus.rows" size="small">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2 mt-3">
+            <li v-for="row in ownerStatus.rows" :key="row.ownerName">
+              <MobileListCard
+                :title="row.ownerName"
+                :subtitle="`${row.drawingCount} برداشت`"
+                :meta="formatMoneyFa(row.totalDrawings)"
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="ownerStatus.rows" size="small">
             <Column field="ownerName" header="مالک" />
             <Column field="drawingCount" header="تعداد" />
             <Column header="جمع برداشت">
@@ -639,7 +744,16 @@ onMounted(async () => {
             بدهی {{ formatMoneyFa(partnerBalances.totalLiabilities) }} ·
             خالص {{ formatMoneyFa(partnerBalances.netEquity) }}
           </p>
-          <DataTable :value="partnerBalances.rows" size="small">
+          <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2 mt-3">
+            <li v-for="row in partnerBalances.rows" :key="row.partnerName">
+              <MobileListCard
+                :title="row.partnerName"
+                :subtitle="`سهم ${row.sharePercent}٪ · سود ${formatMoneyFa(row.profitShare)}`"
+                :meta="formatMoneyFa(row.netBalance)"
+              />
+            </li>
+          </ul>
+          <DataTable v-else :value="partnerBalances.rows" size="small">
             <Column field="partnerName" header="شریک" />
             <Column header="سهم">
               <template #body="{ data }">{{ data.sharePercent }}٪</template>

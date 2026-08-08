@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import TreeTable from "primevue/treetable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
@@ -29,11 +29,15 @@ import {
 } from "@/lib/account-labels";
 import AccountFormDrawer from "@/components/AccountFormDrawer.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
+import { flattenAccountTree } from "@/lib/flatten-tree";
 import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
 const confirm = useConfirm();
 const { copy: pageCopy, isMobile } = usePageCopy("accounts");
+
+const flatRows = computed(() => flattenAccountTree(nodes.value));
 
 const nodes = ref<AccountTreeNode[]>([]);
 const flatAccounts = ref<Account[]>([]);
@@ -189,6 +193,41 @@ function confirmRemove(account: Account): void {
       <p>هیچ حسابی یافت نشد</p>
       <Button label="افزودن اولین حساب" icon="pi pi-plus" @click="openCreate" />
     </div>
+
+    <ul
+      v-else-if="isMobile"
+      class="list-none m-0 p-0 space-y-3"
+    >
+      <li
+        v-for="row in flatRows"
+        :key="row.id"
+        :style="{ paddingRight: `${row.depth * 0.75}rem` }"
+        class="hy-surface overflow-hidden"
+      >
+        <MobileListCard
+          :title="`${row.code} — ${row.name}`"
+          :subtitle="`${ACCOUNT_TYPE_LABELS[row.type]} · ${ACCOUNT_NATURE_LABELS[row.nature]}`"
+          :meta="ACCOUNT_LEVEL_LABELS[row.level]"
+          meta-severity="secondary"
+        />
+        <div class="flex gap-1 px-4 pb-3">
+          <Button
+            icon="pi pi-pencil"
+            text
+            rounded
+            severity="info"
+            @click="openEdit(row)"
+          />
+          <Button
+            icon="pi pi-trash"
+            text
+            rounded
+            severity="danger"
+            @click="confirmRemove(row)"
+          />
+        </div>
+      </li>
+    </ul>
 
     <TreeTable
       v-else

@@ -28,6 +28,7 @@ import {
 } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa } from "@/lib/money";
 import { usePageCopy } from "@/composables/usePageCopy";
@@ -146,7 +147,30 @@ async function save(): Promise<void> {
     </PageHeader>
 
     <div class="hy-surface overflow-hidden">
+      <EmptyState
+        v-if="!loading && rows.length === 0"
+        icon="pi pi-box"
+        title="هنوز تعدیلی ثبت نشده"
+        description="پس از خرید، کسر یا اضافه بار را اینجا ثبت کنید"
+        action-label="ثبت جدید"
+        @action="openCreate"
+      />
+
+      <ul
+        v-else-if="isMobile"
+        class="list-none m-0 p-0 divide-y divide-[var(--hy-border)]"
+      >
+        <li v-for="row in rows" :key="row.id">
+          <MobileListCard
+            :title="row.productName"
+            :subtitle="`${row.dateJalali} · ${WEIGHT_ADJUSTMENT_KIND_LABELS[row.kind as WeightAdjustmentKind]}`"
+            :meta="formatMoneyFa(row.costAmount)"
+          />
+        </li>
+      </ul>
+
       <DataTable
+        v-else
         :value="rows"
         :loading="loading"
         striped-rows

@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
@@ -87,7 +88,51 @@ async function reopen(row: FiscalYear): Promise<void> {
     </div>
 
     <div class="hy-surface overflow-hidden">
-      <DataTable :value="years" :loading="loading" class="text-sm">
+      <ul
+        v-if="isMobile"
+        class="list-none m-0 p-0 divide-y divide-[var(--hy-border)]"
+      >
+        <li v-for="row in years" :key="row.id" class="p-4 space-y-3">
+          <MobileListCard
+            :title="row.title"
+            :subtitle="`${row.startJalali} — ${row.endJalali}`"
+            :meta="row.isClosed ? ux.fiscal.closed : row.isActive ? ux.fiscal.active : ux.common.inactive"
+            :meta-severity="row.isClosed ? 'danger' : row.isActive ? 'success' : 'secondary'"
+          />
+          <p v-if="row.closedThroughJalali" class="text-xs text-[var(--hy-muted)] m-0">
+            قفل تا: {{ row.closedThroughJalali }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-if="!row.isClosed"
+              :label="ux.fiscal.closePeriod"
+              size="small"
+              outlined
+              class="min-h-10"
+              @click="closePeriod(row)"
+            />
+            <Button
+              v-if="!row.isClosed"
+              :label="ux.fiscal.closeYear"
+              size="small"
+              severity="danger"
+              outlined
+              class="min-h-10"
+              @click="closeYear(row)"
+            />
+            <Button
+              v-if="row.isClosed || row.closedThroughJalali"
+              :label="ux.fiscal.reopen"
+              size="small"
+              text
+              class="min-h-10"
+              @click="reopen(row)"
+            />
+          </div>
+        </li>
+      </ul>
+
+      <DataTable v-else :value="years" :loading="loading" class="text-sm">
         <Column field="title" header="سال" />
         <Column field="startJalali" header="شروع" />
         <Column field="endJalali" header="پایان" />

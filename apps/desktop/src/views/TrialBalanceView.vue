@@ -13,6 +13,8 @@ import { printTrialBalance } from "@/lib/trial-balance-print";
 import { exportTrialBalanceExcel } from "@/lib/trial-balance-export";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
+import { flattenTrialBalanceTree } from "@/lib/flatten-tree";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
@@ -24,6 +26,10 @@ const report = ref<TrialBalanceReport | null>(null);
 
 const equationSeverity = computed(() =>
   report.value?.isBalanced ? ("success" as const) : ("danger" as const),
+);
+
+const flatRows = computed(() =>
+  report.value ? flattenTrialBalanceTree(report.value.tree) : [],
 );
 
 async function load(): Promise<void> {
@@ -115,8 +121,32 @@ function onPrint(): void {
       <p>{{ ux.trialBalance.emptyHint }}</p>
     </div>
 
+    <ul
+      v-if="report && isMobile"
+      class="list-none m-0 p-0 space-y-2"
+    >
+      <li
+        v-for="row in flatRows"
+        :key="`${row.code}-${row.depth}`"
+        :style="{ paddingRight: `${row.depth * 0.75}rem` }"
+      >
+        <MobileListCard
+          :title="`${row.code} — ${row.name}`"
+          :subtitle="`سطح ${row.level}`"
+          :meta="
+            row.debit !== '0'
+              ? `ب ${formatMoneyFa(row.debit)}`
+              : row.credit !== '0'
+                ? `بس ${formatMoneyFa(row.credit)}`
+                : '—'
+          "
+          :meta-severity="report && !report.isBalanced ? 'danger' : 'info'"
+        />
+      </li>
+    </ul>
+
     <TreeTable
-      v-if="report"
+      v-else-if="report"
       :value="report.tree"
       :loading="loading"
       class="text-sm"

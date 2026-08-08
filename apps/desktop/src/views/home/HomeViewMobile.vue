@@ -3,8 +3,6 @@ import type { DashboardSummary } from "@hesabyar/shared";
 import { useRouter } from "vue-router";
 import Button from "primevue/button";
 import Tag from "primevue/tag";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 import { formatMoneyFa } from "@/lib/money";
 import { QUICK_ACTIONS } from "@/lib/nav-config";
 import { ux } from "@/locale/ux-copy";
