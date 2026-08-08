@@ -84,5 +84,23 @@ export const DashboardSummarySchema = z.object({
       periodOwnerDrawings: z.string(),
     })
     .optional(),
+  ownership: z
+    .object({
+      totalAssets: z.string(),
+      totalLiabilities: z.string(),
+      netEquity: z.string(),
+      sharePercentTotal: z.number(),
+      isShareValid: z.boolean(),
+      slices: z.array(
+        z.object({
+          partnerId: z.string().uuid(),
+          partnerName: z.string(),
+          sharePercent: z.number(),
+          amount: z.string(),
+          label: z.string(),
+        }),
+      ),
+    })
+    .optional(),
 });
 export type DashboardSummary = z.infer<typeof DashboardSummarySchema>;

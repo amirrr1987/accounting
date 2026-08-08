@@ -18,6 +18,7 @@ import CheckFormView from "@/views/CheckFormView.vue";
 import ChecksView from "@/views/ChecksView.vue";
 import BankAccountsView from "@/views/BankAccountsView.vue";
 import ExpensesView from "@/views/ExpensesView.vue";
+import PartnersView from "@/views/PartnersView.vue";
 import PaymentFormView from "@/views/PaymentFormView.vue";
 import ReportsView from "@/views/ReportsView.vue";
 import VoucherDetailView from "@/views/VoucherDetailView.vue";
@@ -52,6 +53,7 @@ export const router = createRouter({
     { path: "/weight-adjustments", name: "weight-adjustments", component: WeightAdjustmentsView },
     { path: "/bank-accounts", name: "bank-accounts", component: BankAccountsView },
     { path: "/expenses", name: "expenses", component: ExpensesView },
+    { path: "/partners", name: "partners", component: PartnersView },
     { path: "/checks", name: "checks", component: ChecksView },
     { path: "/checks/new", name: "check-new", component: CheckFormView },
     { path: "/invoices", name: "invoices", component: InvoicesView },

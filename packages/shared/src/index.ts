@@ -333,6 +333,30 @@ export {
 } from "./schemas/expense.schema";
 
 export {
+  PARTNER_COA_PARENTS,
+  PartnerSchema,
+  PartnerListSchema,
+  CreatePartnerSchema,
+  UpdatePartnerSchema,
+  PartnerBalanceRowSchema,
+  PartnerBalanceReportSchema,
+  OwnershipSliceSchema,
+  OwnershipDashboardSchema,
+  CreatePartnerDrawingSchema,
+  PartnerDrawingSchema,
+  PartnerDrawingListSchema,
+  type Partner,
+  type CreatePartnerInput,
+  type UpdatePartnerInput,
+  type PartnerBalanceRow,
+  type PartnerBalanceReport,
+  type OwnershipSlice,
+  type OwnershipDashboard,
+  type CreatePartnerDrawingInput,
+  type PartnerDrawing,
+} from "./schemas/partner.schema";
+
+export {
   ReportRangeQuerySchema,
   ReportAsOfQuerySchema,
   PartyStatementQuerySchema,

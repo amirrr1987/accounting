@@ -23,6 +23,7 @@ import { BankAccountModule } from "./bank-account/bank-account.module";
 import { CheckModule } from "./check/check.module";
 import { BusinessSettingsModule } from "./business-settings/business-settings.module";
 import { ExpenseModule } from "./expense/expense.module";
+import { PartnerModule } from "./partner/partner.module";
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ExpenseModule } from "./expense/expense.module";
     CheckModule,
     BusinessSettingsModule,
     ExpenseModule,
+    PartnerModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

@@ -137,6 +137,8 @@ model Account {
   children     Account[]     @relation("AccountTree")
   voucherLines VoucherLine[]
   bankAccounts BankAccount[]
+  partnerCapitalCoa BusinessPartner[] @relation("PartnerCapitalCoa")
+  partnerDrawingCoa BusinessPartner[] @relation("PartnerDrawingCoa")
 
   @@index([parentId])
   @@index([name])
@@ -166,6 +168,7 @@ model Voucher {
   checkEvents      CheckEvent[]
   expense          Expense?
   ownerDrawing     OwnerDrawing?
+  partnerDrawing   PartnerDrawing?
 
   @@index([date])
   @@index([kind])
@@ -505,6 +508,46 @@ model OwnerDrawing {
   @@index([ownerId])
   @@index([date])
   @@map("owner_drawings")
+}
+
+model BusinessPartner {
+  id                  String   @id @default(uuid())
+  name                String
+  mobile              String?
+  nationalId          String?
+  sharePercent        Float
+  coaCapitalAccountId String   @unique
+  coaDrawingAccountId String   @unique
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  coaCapitalAccount Account          @relation("PartnerCapitalCoa", fields: [coaCapitalAccountId], references: [id], onDelete: Restrict)
+  coaDrawingAccount Account          @relation("PartnerDrawingCoa", fields: [coaDrawingAccountId], references: [id], onDelete: Restrict)
+  drawings          PartnerDrawing[]
+
+  @@map("business_partners")
+}
+
+model PartnerDrawing {
+  id            String         @id @default(uuid())
+  partnerId     String
+  date          DateTime       @db.Date
+  amount        BigInt
+  description   String         @default("")
+  payFrom       ExpensePayFrom @default(CASH)
+  cashAccountId String?
+  bankAccountId String?
+  voucherId     String?        @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  partner BusinessPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  voucher Voucher?        @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId])
+  @@index([date])
+  @@map("partner_drawings")
 }
 
 model User {

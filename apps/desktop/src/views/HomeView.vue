@@ -49,6 +49,23 @@ const healthSeverity = computed(() => {
   return "danger" as const;
 });
 
+const ownershipChart = computed(() => {
+  const slices = summary.value?.ownership?.slices ?? [];
+  if (slices.length === 0) return null;
+  const colorMap = [
+    CHART_COLORS.primary,
+    CHART_COLORS.accent,
+    CHART_COLORS.income,
+    CHART_COLORS.equity,
+    CHART_COLORS.expense,
+  ];
+  return {
+    labels: slices.map((s) => s.label),
+    data: slices.map((s) => Number(s.amount)),
+    colors: slices.map((_, i) => colorMap[i % colorMap.length] ?? CHART_COLORS.muted),
+  };
+});
+
 const trendChart = computed(() => {
   const trend = summary.value?.charts?.monthlyTrend ?? [];
   if (trend.length === 0) return null;
@@ -299,6 +316,44 @@ onMounted(() => {
             {{ p.name }} ({{ p.sku }}) — {{ p.stockQty }} عدد
           </li>
         </ul>
+      </section>
+
+      <section
+        v-if="ownershipChart && summary?.ownership"
+        aria-labelledby="ownership-heading"
+        class="hy-surface p-4"
+      >
+        <h2
+          id="ownership-heading"
+          class="text-lg font-bold text-[var(--hy-text)] mb-3 mt-0"
+        >
+          تفکیک سهم شرکا
+          <Tag
+            class="mr-2"
+            :value="summary.ownership.isShareValid ? '۱۰۰٪' : `${summary.ownership.sharePercentTotal}٪`"
+            :severity="summary.ownership.isShareValid ? 'success' : 'warn'"
+          />
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <HyDoughnutChart
+            :labels="ownershipChart.labels"
+            :data="ownershipChart.data"
+            :colors="ownershipChart.colors"
+            title="سهم از خالص دارایی"
+          />
+          <div class="flex flex-col justify-center gap-2 text-sm">
+            <p class="m-0">دارایی: {{ formatMoneyFa(summary.ownership.totalAssets) }}</p>
+            <p class="m-0">بدهی: {{ formatMoneyFa(summary.ownership.totalLiabilities) }}</p>
+            <p class="m-0 font-semibold">خالص: {{ formatMoneyFa(summary.ownership.netEquity) }}</p>
+            <Button
+              :label="ux.nav.partners"
+              icon="pi pi-share-alt"
+              outlined
+              class="min-h-11 mt-2 w-fit"
+              @click="router.push('/partners')"
+            />
+          </div>
+        </div>
       </section>
 
       <section v-if="summary?.charts" aria-labelledby="charts-heading">

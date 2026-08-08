@@ -19,6 +19,7 @@ import type {
   CheckReport,
   InventoryKardexReport,
   OwnerStatusReport,
+  PartnerBalanceReport,
   Product,
 } from "@hesabyar/shared";
 import { todayJalali } from "@hesabyar/shared";
@@ -32,6 +33,7 @@ import {
   fetchCheckReport,
   fetchInventoryKardex,
   fetchOwnerStatusReport,
+  fetchPartnerBalances,
   fetchProducts,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
@@ -60,6 +62,7 @@ const cashFlow = ref<CashFlowReport | null>(null);
 const checkReport = ref<CheckReport | null>(null);
 const kardex = ref<InventoryKardexReport | null>(null);
 const ownerStatus = ref<OwnerStatusReport | null>(null);
+const partnerBalances = ref<PartnerBalanceReport | null>(null);
 const products = ref<Product[]>([]);
 const productId = ref<string | null>(null);
 
@@ -180,6 +183,20 @@ async function loadOwnerStatus(): Promise<void> {
   loading.value = true;
   try {
     ownerStatus.value = await fetchOwnerStatusReport(
+      fromJalali.value,
+      toJalali.value,
+    );
+  } catch {
+    toast.add({ severity: "error", summary: ux.reports.loadError, life: 4000 });
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadPartnerBalances(): Promise<void> {
+  loading.value = true;
+  try {
+    partnerBalances.value = await fetchPartnerBalances(
       fromJalali.value,
       toJalali.value,
     );
@@ -574,6 +591,39 @@ onMounted(async () => {
             <Column field="drawingCount" header="تعداد" />
             <Column header="جمع برداشت">
               <template #body="{ data }">{{ formatMoneyFa(data.totalDrawings) }}</template>
+            </Column>
+          </DataTable>
+        </div>
+      </TabPanel>
+
+      <TabPanel :header="ux.reports.partnerBalances" value="8">
+        <div class="flex flex-wrap gap-3 mb-4 items-end">
+          <JalaliDatePicker v-model="fromJalali" label="از" />
+          <JalaliDatePicker v-model="toJalali" label="تا" />
+          <Button :label="ux.reports.run" icon="pi pi-share-alt" :loading="loading" @click="loadPartnerBalances" />
+        </div>
+        <div v-if="partnerBalances" class="hy-surface p-4">
+          <p class="text-sm text-[var(--hy-muted)] mb-3">
+            دارایی {{ formatMoneyFa(partnerBalances.totalAssets) }} ·
+            بدهی {{ formatMoneyFa(partnerBalances.totalLiabilities) }} ·
+            خالص {{ formatMoneyFa(partnerBalances.netEquity) }}
+          </p>
+          <DataTable :value="partnerBalances.rows" size="small">
+            <Column field="partnerName" header="شریک" />
+            <Column header="سهم">
+              <template #body="{ data }">{{ data.sharePercent }}٪</template>
+            </Column>
+            <Column header="سهم equity">
+              <template #body="{ data }">{{ formatMoneyFa(data.equityShare) }}</template>
+            </Column>
+            <Column header="سهم سود">
+              <template #body="{ data }">{{ formatMoneyFa(data.profitShare) }}</template>
+            </Column>
+            <Column header="برداشت">
+              <template #body="{ data }">{{ formatMoneyFa(data.drawings) }}</template>
+            </Column>
+            <Column header="مانده">
+              <template #body="{ data }">{{ formatMoneyFa(data.netBalance) }}</template>
             </Column>
           </DataTable>
         </div>

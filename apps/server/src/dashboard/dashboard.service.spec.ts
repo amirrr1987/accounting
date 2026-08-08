@@ -74,10 +74,15 @@ describe("DashboardService.getSummary", () => {
       }),
     } as unknown as ReportService;
 
+    const partnerService = {
+      ownership: jest.fn().mockResolvedValue(null),
+    } as unknown as import("../partner/partner.service").PartnerService;
+
     const service = new DashboardService(
       prisma,
       fiscalYearService,
       reportService,
+      partnerService,
     );
     const summary = await service.getSummary();
 

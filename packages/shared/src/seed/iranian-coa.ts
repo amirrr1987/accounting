@@ -47,9 +47,11 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "32", name: "سود و زیان انباشته", type: "EQUITY", nature: "CREDIT", level: "TOTAL", parentCode: "3" },
   { code: "321", name: "سود انباشته", type: "EQUITY", nature: "CREDIT", level: "SUBTOTAL", parentCode: "32" },
   { code: "32101", name: "سود (زیان) انباشته", type: "EQUITY", nature: "CREDIT", level: "DETAIL", parentCode: "321" },
+  { code: "322", name: "سرمایه شرکا", type: "EQUITY", nature: "CREDIT", level: "SUBTOTAL", parentCode: "3" },
   { code: "33", name: "برداشت‌های مالک", type: "EQUITY", nature: "DEBIT", level: "TOTAL", parentCode: "3" },
   { code: "331", name: "برداشت شخصی", type: "EQUITY", nature: "DEBIT", level: "SUBTOTAL", parentCode: "33" },
   { code: "33101", name: "برداشت شخصی مالک", type: "EQUITY", nature: "DEBIT", level: "DETAIL", parentCode: "331" },
+  { code: "332", name: "برداشت شرکا", type: "EQUITY", nature: "DEBIT", level: "SUBTOTAL", parentCode: "33" },
 
   // ——— درآمدها ———
   { code: "4", name: "درآمدها", type: "INCOME", nature: "CREDIT", level: "GROUP", parentCode: null },

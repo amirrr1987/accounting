@@ -85,7 +85,7 @@ Requires Rust toolchain + WebView2 (Windows).
 | 13 | Stock control + sale loss |
 | 14 | Bank accounts + payment methods |
 | 15 | Sayyad checks |
-| 16 | Partners + split inventory (pending) |
+| 16 | Partners + split inventory | ✅ |
 | 17 | Expenses + owner drawings + weight adjustment |
 | 18 | Management dashboard + integrated reports |
 

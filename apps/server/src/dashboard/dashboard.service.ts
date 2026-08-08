@@ -10,6 +10,7 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { FiscalYearService } from "../fiscal-year/fiscal-year.service";
 import { ReportService } from "../report/report.service";
+import { PartnerService } from "../partner/partner.service";
 
 @Injectable()
 export class DashboardService {
@@ -17,6 +18,7 @@ export class DashboardService {
     private readonly prisma: PrismaService,
     private readonly fiscalYearService: FiscalYearService,
     private readonly reportService: ReportService,
+    private readonly partnerService: PartnerService,
   ) {}
 
   async getSummary(): Promise<DashboardSummary> {
@@ -38,6 +40,7 @@ export class DashboardService {
       recentInvoices,
       charts,
       management,
+      ownership,
     ] = await Promise.all([
       this.prisma.account.count(),
       this.prisma.party.count({ where: { isActive: true } }),
@@ -65,6 +68,7 @@ export class DashboardService {
       }),
       this.reportService.charts(rangeFrom, rangeTo),
       this.reportService.managementKpis(rangeFrom, rangeTo, asOfJalali),
+      this.partnerService.ownership().catch(() => null),
     ]);
 
     const movementByAccount = new Map(
@@ -120,6 +124,7 @@ export class DashboardService {
       })),
       charts,
       management,
+      ownership: ownership ?? undefined,
     });
   }
 }

@@ -55,6 +55,15 @@ import {
   OwnerDrawingListSchema,
   OwnerDrawingSchema,
   CreateOwnerDrawingSchema,
+  PartnerListSchema,
+  PartnerSchema,
+  CreatePartnerSchema,
+  UpdatePartnerSchema,
+  PartnerBalanceReportSchema,
+  OwnershipDashboardSchema,
+  PartnerDrawingListSchema,
+  PartnerDrawingSchema,
+  CreatePartnerDrawingSchema,
   CloseFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
@@ -127,6 +136,13 @@ import {
   type CreateOwnerInput,
   type OwnerDrawing,
   type CreateOwnerDrawingInput,
+  type Partner,
+  type CreatePartnerInput,
+  type UpdatePartnerInput,
+  type PartnerBalanceReport,
+  type OwnershipDashboard,
+  type PartnerDrawing,
+  type CreatePartnerDrawingInput,
 } from "@hesabyar/shared";
 import { useAuth } from "@/composables/useAuth";
 import { resolveApiBaseUrl } from "@/lib/api-base";
@@ -714,4 +730,59 @@ export async function createOwnerDrawing(
   });
   const { data } = await api.post<unknown>("/owner-drawings", body);
   return OwnerDrawingSchema.parse(data);
+}
+
+export async function fetchPartners(): Promise<Partner[]> {
+  const { data } = await api.get<unknown>("/partners");
+  return PartnerListSchema.parse(data);
+}
+
+export async function createPartner(input: CreatePartnerInput): Promise<Partner> {
+  const body = CreatePartnerSchema.parse(input);
+  const { data } = await api.post<unknown>("/partners", body);
+  return PartnerSchema.parse(data);
+}
+
+export async function updatePartner(
+  id: string,
+  input: UpdatePartnerInput,
+): Promise<Partner> {
+  const body = UpdatePartnerSchema.parse(input);
+  const { data } = await api.patch<unknown>(`/partners/${id}`, body);
+  return PartnerSchema.parse(data);
+}
+
+export async function deactivatePartner(id: string): Promise<void> {
+  await api.delete(`/partners/${id}`);
+}
+
+export async function fetchPartnerBalances(
+  fromJalali: string,
+  toJalali: string,
+): Promise<PartnerBalanceReport> {
+  const { data } = await api.get<unknown>("/partners/balances", {
+    params: { fromJalali, toJalali },
+  });
+  return PartnerBalanceReportSchema.parse(data);
+}
+
+export async function fetchPartnerOwnership(): Promise<OwnershipDashboard> {
+  const { data } = await api.get<unknown>("/partners/ownership");
+  return OwnershipDashboardSchema.parse(data);
+}
+
+export async function fetchPartnerDrawings(): Promise<PartnerDrawing[]> {
+  const { data } = await api.get<unknown>("/partners/drawings");
+  return PartnerDrawingListSchema.parse(data);
+}
+
+export async function createPartnerDrawing(
+  input: CreatePartnerDrawingInput,
+): Promise<PartnerDrawing> {
+  const body = CreatePartnerDrawingSchema.parse({
+    ...input,
+    amount: input.amount.toString(),
+  });
+  const { data } = await api.post<unknown>("/partners/drawings", body);
+  return PartnerDrawingSchema.parse(data);
 }
