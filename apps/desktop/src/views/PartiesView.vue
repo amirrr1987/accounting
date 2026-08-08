@@ -16,11 +16,14 @@ import {
   fetchParties,
   updateParty,
 } from "@/lib/api";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("parties");
 const parties = ref<Party[]>([]);
 const loading = ref(false);
 const dialogVisible = ref(false);
@@ -80,38 +83,31 @@ function openEdit(row: Party): void {
 async function save(): Promise<void> {
   if (!form.name.trim()) return;
   saving.value = true;
-  const payload: CreatePartyInput = {
-    kind: form.kind,
-    name: form.name.trim(),
-    phone: form.phone.trim() || null,
-    nationalId: form.nationalId.trim() || null,
-    isActive: true,
-  };
   try {
+    const payload: CreatePartyInput = {
+      kind: form.kind,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      nationalId: form.nationalId.trim() || null,
+    };
     if (editing.value) {
       await updateParty(editing.value.id, payload);
-      toast.add({
-        severity: "success",
-        summary: "ذخیره شد",
-        detail: "طرف‌حساب ویرایش شد",
-        life: 2500,
-      });
     } else {
       await createParty(payload);
-      toast.add({
-        severity: "success",
-        summary: "ایجاد شد",
-        detail: "طرف‌حساب افزوده شد",
-        life: 2500,
-      });
     }
     dialogVisible.value = false;
+    toast.add({
+      severity: "success",
+      summary: editing.value ? "ویرایش شد" : "افزوده شد",
+      detail: form.name.trim(),
+      life: 2500,
+    });
     await load();
   } catch {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ذخیره طرف‌حساب ناموفق بود",
+      detail: "ذخیره ناموفق بود",
       life: 4000,
     });
   } finally {
@@ -141,10 +137,14 @@ async function deactivate(row: Party): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
 
-    <PageHeader :title="ux.parties.title" :subtitle="ux.parties.subtitle">
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
       <template #actions>
         <Button
           :label="ux.parties.create"
@@ -155,65 +155,79 @@ async function deactivate(row: Party): Promise<void> {
       </template>
     </PageHeader>
 
-    <div class="hy-surface overflow-hidden">
-      <EmptyState
-        v-if="!loading && parties.length === 0"
-        :title="ux.parties.emptyTitle"
-        :description="ux.parties.emptyBody"
-        icon="pi pi-users"
-        :action-label="ux.parties.emptyCta"
-        @action="openCreate"
-      />
+    <EmptyState
+      v-if="!loading && parties.length === 0"
+      :title="ux.parties.emptyTitle"
+      :description="ux.parties.emptyBody"
+      icon="pi pi-users"
+      :action-label="ux.parties.emptyCta"
+      @action="openCreate"
+    />
 
+    <ul
+      v-else-if="isMobile"
+      class="list-none m-0 p-0 space-y-2"
+    >
+      <li v-for="row in parties" :key="row.id">
+        <MobileListCard
+          :title="row.name"
+          :subtitle="row.phone ?? 'بدون تلفن'"
+          :meta="row.kind === 'CUSTOMER' ? 'مشتری' : 'تأمین‌کننده'"
+          :meta-severity="row.isActive ? 'info' : 'secondary'"
+          @click="openEdit(row)"
+        />
+      </li>
+    </ul>
+
+    <div v-else class="hy-surface overflow-hidden">
       <DataTable
-        v-else
         :value="parties"
         :loading="loading"
         paginator
         :rows="15"
         class="text-sm"
       >
-      <Column field="name" header="نام" />
-      <Column header="نوع">
-        <template #body="{ data }">
-          {{ data.kind === "CUSTOMER" ? "مشتری" : "تأمین‌کننده" }}
-        </template>
-      </Column>
-      <Column field="phone" header="تلفن" />
-      <Column field="nationalId" header="شناسه ملی" />
-      <Column header="وضعیت">
-        <template #body="{ data }">
-          <Tag
-            :value="data.isActive ? ux.common.active : ux.common.inactive"
-            :severity="data.isActive ? 'success' : 'secondary'"
-          />
-        </template>
-      </Column>
-      <Column header="عملیات">
-        <template #body="{ data }">
-          <div class="flex gap-2">
-            <Button
-              icon="pi pi-pencil"
-              text
-              rounded
-              class="hy-touch"
-              :aria-label="ux.common.edit"
-              @click="openEdit(data)"
+        <Column field="name" header="نام" />
+        <Column header="نوع">
+          <template #body="{ data }">
+            {{ data.kind === "CUSTOMER" ? "مشتری" : "تأمین‌کننده" }}
+          </template>
+        </Column>
+        <Column field="phone" header="تلفن" />
+        <Column field="nationalId" header="شناسه ملی" />
+        <Column header="وضعیت">
+          <template #body="{ data }">
+            <Tag
+              :value="data.isActive ? ux.common.active : ux.common.inactive"
+              :severity="data.isActive ? 'success' : 'secondary'"
             />
-            <Button
-              v-if="data.isActive"
-              icon="pi pi-ban"
-              text
-              rounded
-              class="hy-touch"
-              severity="danger"
-              aria-label="غیرفعال‌سازی"
-              @click="deactivate(data)"
-            />
-          </div>
-        </template>
-      </Column>
-    </DataTable>
+          </template>
+        </Column>
+        <Column header="عملیات">
+          <template #body="{ data }">
+            <div class="flex gap-2">
+              <Button
+                icon="pi pi-pencil"
+                text
+                rounded
+                class="hy-touch"
+                :aria-label="ux.common.edit"
+                @click="openEdit(data)"
+              />
+              <Button
+                v-if="data.isActive"
+                icon="pi pi-ban"
+                text
+                rounded
+                class="hy-touch"
+                severity="danger"
+                aria-label="غیرفعال‌سازی"
+                @click="deactivate(data)"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
     </div>
 
     <Dialog
@@ -224,7 +238,12 @@ async function deactivate(row: Party): Promise<void> {
     >
       <div class="flex flex-col gap-3 pt-2">
         <label class="text-sm text-[var(--hy-muted)]">نوع</label>
-        <Select v-model="form.kind" :options="kindOptions" option-label="label" option-value="value" />
+        <Select
+          v-model="form.kind"
+          :options="kindOptions"
+          option-label="label"
+          option-value="value"
+        />
         <label class="text-sm text-[var(--hy-muted)]">نام</label>
         <InputText v-model="form.name" class="min-h-11" />
         <label class="text-sm text-[var(--hy-muted)]">تلفن</label>
@@ -233,8 +252,18 @@ async function deactivate(row: Party): Promise<void> {
         <InputText v-model="form.nationalId" class="min-h-11" />
       </div>
       <template #footer>
-        <Button :label="ux.common.cancel" text class="min-h-11" @click="dialogVisible = false" />
-        <Button :label="ux.common.save" class="min-h-11" :loading="saving" @click="save" />
+        <Button
+          :label="ux.common.cancel"
+          text
+          class="min-h-11"
+          @click="dialogVisible = false"
+        />
+        <Button
+          :label="ux.common.save"
+          class="min-h-11"
+          :loading="saving"
+          @click="save"
+        />
       </template>
     </Dialog>
   </div>

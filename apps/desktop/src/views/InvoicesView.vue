@@ -12,13 +12,16 @@ import { useConfirm } from "primevue/useconfirm";
 import { INVOICE_KIND_LABELS, type Invoice } from "@hesabyar/shared";
 import { fetchInvoices, softDeleteInvoice } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
 const confirm = useConfirm();
 const router = useRouter();
+const { copy: pageCopy, isMobile } = usePageCopy("invoices");
 const invoices = ref<Invoice[]>([]);
 const loading = ref(false);
 
@@ -75,11 +78,15 @@ function confirmDelete(row: Invoice): void {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <ConfirmDialog />
 
-    <PageHeader :title="ux.invoices.title" :subtitle="ux.invoices.subtitle">
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
       <template #actions>
         <Button
           :label="ux.invoices.create"
@@ -90,18 +97,32 @@ function confirmDelete(row: Invoice): void {
       </template>
     </PageHeader>
 
-    <div class="hy-surface overflow-hidden">
-      <EmptyState
-        v-if="!loading && invoices.length === 0"
-        :title="ux.invoices.emptyTitle"
-        :description="ux.invoices.emptyBody"
-        icon="pi pi-file"
-        :action-label="ux.invoices.emptyCta"
-        @action="router.push('/invoices/new')"
-      />
+    <EmptyState
+      v-if="!loading && invoices.length === 0"
+      :title="ux.invoices.emptyTitle"
+      :description="ux.invoices.emptyBody"
+      icon="pi pi-file"
+      :action-label="ux.invoices.emptyCta"
+      @action="router.push('/invoices/new')"
+    />
 
+    <ul
+      v-else-if="isMobile"
+      class="list-none m-0 p-0 space-y-2"
+    >
+      <li v-for="row in invoices" :key="row.id">
+        <MobileListCard
+          :title="row.partyName"
+          :subtitle="`${row.number} · ${row.dateJalali}`"
+          :meta="formatMoneyFa(row.total)"
+          :meta-severity="row.deletedAt ? 'danger' : 'success'"
+          @click="router.push(`/invoices/${row.id}`)"
+        />
+      </li>
+    </ul>
+
+    <div v-else class="hy-surface overflow-hidden">
       <DataTable
-        v-else
         :value="invoices"
         :loading="loading"
         paginator

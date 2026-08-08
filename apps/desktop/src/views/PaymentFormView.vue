@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import Button from "primevue/button";
@@ -19,12 +19,22 @@ import {
   fetchParties,
 } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
+import { useIsMobileRef } from "@/composables/useViewport";
+import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
+import MobileStepWizard from "@/components/MobileStepWizard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { ux } from "@/locale/ux-copy";
 
+type Flow = "receipt" | "payment";
+
 const router = useRouter();
+const route = useRoute();
 const toast = useToast();
+const isMobile = useIsMobileRef();
+const { copy: pageCopy } = usePageCopy("payments");
+const { inputLabel } = useMoneyDisplay();
 
 const dateJalali = ref(todayJalali());
 const amount = ref<number | null>(null);
@@ -36,6 +46,10 @@ const paymentPartyId = ref<string | null>(null);
 const receiptMethod = ref<"CASH" | "CHECK_RECEIVABLE">("CASH");
 const paymentMethod = ref<"CASH" | "CHECK_PAYABLE">("CASH");
 const saving = ref(false);
+
+const wizardFlow = ref<Flow | null>(null);
+const wizardStep = ref(0);
+const payFrom = ref<"cash" | "bank">("cash");
 
 const checkForm = ref({
   sayyadNumber: "",
@@ -88,6 +102,107 @@ const paymentMethodOptions = [
   { value: "CHECK_PAYABLE" as const, label: PAYMENT_METHOD_LABELS.CHECK_PAYABLE },
 ];
 
+const activePartyId = computed({
+  get: () =>
+    wizardFlow.value === "payment"
+      ? paymentPartyId.value
+      : receiptPartyId.value,
+  set: (id: string | null) => {
+    if (wizardFlow.value === "payment") paymentPartyId.value = id;
+    else receiptPartyId.value = id;
+  },
+});
+
+const activeParties = computed(() =>
+  wizardFlow.value === "payment" ? suppliers.value : customers.value,
+);
+
+const wizardSteps = computed(() => {
+  const base = wizardFlow.value
+    ? [
+        ux.paymentWizard.stepParty,
+        ux.paymentWizard.stepAmount,
+        ux.paymentWizard.stepConfirm,
+      ]
+    : [
+        ux.paymentWizard.chooseType,
+        ux.paymentWizard.stepParty,
+        ux.paymentWizard.stepAmount,
+        ux.paymentWizard.stepConfirm,
+      ];
+  return base;
+});
+
+const summaryPartyName = computed(() => {
+  const id = activePartyId.value;
+  return activeParties.value.find((p) => p.id === id)?.name ?? "—";
+});
+
+const wizardPhase = computed<
+  "type" | "party" | "amount" | "confirm"
+>(() => {
+  if (!wizardFlow.value && wizardStep.value === 0) return "type";
+  const base = wizardFlow.value ? wizardStep.value : wizardStep.value - 1;
+  if (base <= 0) return "party";
+  if (base === 1) return "amount";
+  return "confirm";
+});
+
+const wizardCanNext = computed(() => {
+  if (wizardPhase.value === "type") return false;
+  if (wizardPhase.value === "party") return Boolean(activePartyId.value);
+  if (wizardPhase.value === "amount") {
+    if (!amount.value || amount.value <= 0) return false;
+    if (payFrom.value === "cash") return Boolean(cashAccountId.value);
+    return Boolean(bankAccountId.value);
+  }
+  return true;
+});
+
+function pickFlow(flow: Flow): void {
+  wizardFlow.value = flow;
+  receiptMethod.value = "CASH";
+  paymentMethod.value = "CASH";
+  wizardStep.value = 0;
+}
+
+function syncFlowFromRoute(): void {
+  const q = route.query.flow;
+  if (q === "receipt" || q === "payment") {
+    wizardFlow.value = q;
+    wizardStep.value = 0;
+  }
+}
+
+function wizardBack(): void {
+  if (wizardStep.value > 0) wizardStep.value -= 1;
+}
+
+function wizardNext(): void {
+  if (wizardStep.value < wizardSteps.value.length - 1) {
+    wizardStep.value += 1;
+  }
+}
+
+function wizardFinish(): void {
+  if (wizardFlow.value === "payment") void submitPayment();
+  else void submitReceipt();
+}
+
+watch(payFrom, (v) => {
+  if (v === "cash") {
+    bankAccountId.value = null;
+    if (!cashAccountId.value && cashAccounts.value[0]) {
+      cashAccountId.value = cashAccounts.value[0].id;
+    }
+  } else {
+    cashAccountId.value = null;
+    if (!bankAccountId.value && bankAccounts.value[0]) {
+      bankAccountId.value = bankAccounts.value[0].id;
+    }
+  }
+});
+
 const canSaveReceipt = computed(() => {
   if (!receiptPartyId.value || !amount.value || amount.value <= 0) return false;
   if (receiptMethod.value === "CHECK_RECEIVABLE") return isCheckValid();
@@ -109,9 +224,7 @@ async function load(): Promise<void> {
   ]);
   customers.value = cust.filter((p) => p.isActive);
   suppliers.value = supp.filter((p) => p.isActive);
-  cashAccounts.value = accs.filter(
-    (a) => a.isActive && a.code === "11101",
-  );
+  cashAccounts.value = accs.filter((a) => a.isActive && a.code === "11101");
   bankAccounts.value = banks.filter((b) => b.isActive);
   if (cashAccounts.value[0]) {
     cashAccountId.value = cashAccounts.value[0].id;
@@ -127,9 +240,16 @@ async function submitReceipt(): Promise<void> {
       partyId: receiptPartyId.value,
       amount: BigInt(parseMoneyInput(String(amount.value))),
       method: receiptMethod.value,
-      cashAccountId: receiptMethod.value === "CASH" ? cashAccountId.value ?? undefined : undefined,
-      bankAccountId: receiptMethod.value === "CASH" ? bankAccountId.value ?? undefined : undefined,
-      check: receiptMethod.value === "CHECK_RECEIVABLE" ? checkPayload() : undefined,
+      cashAccountId:
+        receiptMethod.value === "CASH"
+          ? cashAccountId.value ?? undefined
+          : undefined,
+      bankAccountId:
+        receiptMethod.value === "CASH"
+          ? bankAccountId.value ?? undefined
+          : undefined,
+      check:
+        receiptMethod.value === "CHECK_RECEIVABLE" ? checkPayload() : undefined,
       description: description.value || undefined,
     });
     toast.add({
@@ -155,9 +275,16 @@ async function submitPayment(): Promise<void> {
       partyId: paymentPartyId.value,
       amount: BigInt(parseMoneyInput(String(amount.value))),
       method: paymentMethod.value,
-      cashAccountId: paymentMethod.value === "CASH" ? cashAccountId.value ?? undefined : undefined,
-      bankAccountId: paymentMethod.value === "CASH" ? bankAccountId.value ?? undefined : undefined,
-      check: paymentMethod.value === "CHECK_PAYABLE" ? checkPayload() : undefined,
+      cashAccountId:
+        paymentMethod.value === "CASH"
+          ? cashAccountId.value ?? undefined
+          : undefined,
+      bankAccountId:
+        paymentMethod.value === "CASH"
+          ? bankAccountId.value ?? undefined
+          : undefined,
+      check:
+        paymentMethod.value === "CHECK_PAYABLE" ? checkPayload() : undefined,
       description: description.value || undefined,
     });
     toast.add({
@@ -175,21 +302,166 @@ async function submitPayment(): Promise<void> {
 }
 
 onMounted(() => {
+  syncFlowFromRoute();
   void load();
 });
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
-      :title="ux.payments.title"
-      :subtitle="ux.payments.subtitle"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     />
 
-    <TabView>
+    <!-- Mobile wizard -->
+    <MobileStepWizard
+      v-if="isMobile"
+      :steps="wizardSteps"
+      :step="wizardStep"
+      :can-next="wizardCanNext"
+      :loading="saving"
+      :finish-label="
+        wizardFlow === 'payment'
+          ? ux.paymentWizard.confirmPayment
+          : ux.paymentWizard.confirmReceipt
+      "
+      @back="wizardBack"
+      @next="wizardNext"
+      @finish="wizardFinish"
+    >
+      <div v-if="wizardPhase === 'type'" class="grid grid-cols-1 gap-3">
+        <button
+          type="button"
+          class="hy-surface p-5 text-right min-h-[5.5rem]"
+          @click="pickFlow('receipt')"
+        >
+          <p class="font-bold m-0 text-lg">{{ ux.paymentWizard.receipt }}</p>
+          <p class="text-sm text-[var(--hy-muted)] m-0 mt-1">
+            {{ ux.paymentWizard.receiptHint }}
+          </p>
+        </button>
+        <button
+          type="button"
+          class="hy-surface p-5 text-right min-h-[5.5rem]"
+          @click="pickFlow('payment')"
+        >
+          <p class="font-bold m-0 text-lg">{{ ux.paymentWizard.payment }}</p>
+          <p class="text-sm text-[var(--hy-muted)] m-0 mt-1">
+            {{ ux.paymentWizard.paymentHint }}
+          </p>
+        </button>
+      </div>
+
+      <div
+        v-else-if="wizardPhase === 'party'"
+        class="hy-surface p-4 space-y-4"
+      >
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-[var(--hy-muted)]">
+            {{
+              wizardFlow === "payment"
+                ? ux.paymentWizard.supplier
+                : ux.paymentWizard.customer
+            }}
+          </label>
+          <Select
+            v-model="activePartyId"
+            :options="activeParties"
+            option-label="name"
+            option-value="id"
+            filter
+            class="w-full"
+          />
+        </div>
+        <JalaliDatePicker v-model="dateJalali" />
+      </div>
+
+      <div
+        v-else-if="wizardPhase === 'amount'"
+        class="hy-surface p-4 space-y-4"
+      >
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-[var(--hy-muted)]">
+            {{ ux.paymentWizard.amountLabel }} ({{ inputLabel }})
+          </label>
+          <InputNumber
+            v-model="amount"
+            locale="fa-IR"
+            :min="0"
+            class="w-full"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-[var(--hy-muted)]">
+            {{ ux.paymentWizard.cashOrBank }}
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <Button
+              :label="ux.paymentWizard.cash"
+              :outlined="payFrom !== 'cash'"
+              class="min-h-11"
+              @click="payFrom = 'cash'"
+            />
+            <Button
+              :label="ux.paymentWizard.bank"
+              :outlined="payFrom !== 'bank'"
+              class="min-h-11"
+              @click="payFrom = 'bank'"
+            />
+          </div>
+        </div>
+        <Select
+          v-if="payFrom === 'cash'"
+          v-model="cashAccountId"
+          :options="cashAccounts"
+          :option-label="(a: Account) => a.name"
+          option-value="id"
+          class="w-full"
+        />
+        <Select
+          v-else
+          v-model="bankAccountId"
+          :options="bankAccounts"
+          :option-label="(b: BankAccount) => `${b.bankName} — ${b.name}`"
+          option-value="id"
+          class="w-full"
+        />
+        <p class="text-xs text-[var(--hy-muted)] m-0">
+          {{ ux.paymentWizard.mobileCheckHint }}
+        </p>
+      </div>
+
+      <div v-else class="hy-surface p-4 space-y-3 text-sm">
+        <p class="m-0">
+          <span class="text-[var(--hy-muted)]"
+            >{{ ux.paymentWizard.summaryWho }}:</span
+          >
+          {{ summaryPartyName }}
+        </p>
+        <p class="m-0">
+          <span class="text-[var(--hy-muted)]"
+            >{{ ux.paymentWizard.summaryAmount }}:</span
+          >
+          {{ amount ?? 0 }} {{ inputLabel }}
+        </p>
+        <p class="m-0">
+          <span class="text-[var(--hy-muted)]"
+            >{{ ux.paymentWizard.summaryDate }}:</span
+          >
+          {{ dateJalali }}
+        </p>
+      </div>
+    </MobileStepWizard>
+
+    <!-- Desktop tabs -->
+    <TabView v-else>
       <TabPanel :header="ux.payments.receiptTab" value="0">
-        <div class="hy-surface p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        <div
+          class="hy-surface p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl"
+        >
           <JalaliDatePicker v-model="dateJalali" />
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">مشتری</label>
@@ -241,22 +513,39 @@ onMounted(() => {
             </div>
           </template>
           <template v-if="receiptMethod === 'CHECK_RECEIVABLE'">
-            <div class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]">
+            <div
+              class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]"
+            >
               اطلاعات چک صیادی
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
-              <InputText v-model="checkForm.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.sayyadNumber"
+                maxlength="16"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <JalaliDatePicker v-model="checkForm.issueJalali" />
             <JalaliDatePicker v-model="checkForm.dueJalali" />
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
-              <InputText v-model="checkForm.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.drawerNationalId"
+                maxlength="10"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
-              <InputText v-model="checkForm.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.drawerMobile"
+                maxlength="11"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">بانک</label>
@@ -264,7 +553,9 @@ onMounted(() => {
             </div>
           </template>
           <div class="flex flex-col gap-1">
-            <label class="text-sm text-[var(--hy-muted)]">مبلغ (ریال)</label>
+            <label class="text-sm text-[var(--hy-muted)]"
+              >مبلغ ({{ inputLabel }})</label
+            >
             <InputNumber
               v-model="amount"
               locale="fa-IR"
@@ -288,7 +579,9 @@ onMounted(() => {
       </TabPanel>
 
       <TabPanel :header="ux.payments.paymentTab" value="1">
-        <div class="hy-surface p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        <div
+          class="hy-surface p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl"
+        >
           <JalaliDatePicker v-model="dateJalali" />
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">تأمین‌کننده</label>
@@ -340,22 +633,39 @@ onMounted(() => {
             </div>
           </template>
           <template v-if="paymentMethod === 'CHECK_PAYABLE'">
-            <div class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]">
+            <div
+              class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]"
+            >
               اطلاعات چک صیادی
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
-              <InputText v-model="checkForm.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.sayyadNumber"
+                maxlength="16"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <JalaliDatePicker v-model="checkForm.issueJalali" />
             <JalaliDatePicker v-model="checkForm.dueJalali" />
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
-              <InputText v-model="checkForm.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.drawerNationalId"
+                maxlength="10"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
-              <InputText v-model="checkForm.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
+              <InputText
+                v-model="checkForm.drawerMobile"
+                maxlength="11"
+                dir="ltr"
+                class="w-full"
+              />
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">بانک</label>
@@ -363,7 +673,9 @@ onMounted(() => {
             </div>
           </template>
           <div class="flex flex-col gap-1">
-            <label class="text-sm text-[var(--hy-muted)]">مبلغ (ریال)</label>
+            <label class="text-sm text-[var(--hy-muted)]"
+              >مبلغ ({{ inputLabel }})</label
+            >
             <InputNumber
               v-model="amount"
               locale="fa-IR"

@@ -18,5 +18,6 @@ describe("ux copy", () => {
     expect(ux.nav.paymentsSimple).toMatch(/پول/);
     expect(ux.navGroups.daily.title).toMatch(/روزانه/);
     expect(ux.quickActions.sale).toBe("فروختم");
+    expect(ux.onboarding.steps.welcome).toBeTruthy();
   });
 });

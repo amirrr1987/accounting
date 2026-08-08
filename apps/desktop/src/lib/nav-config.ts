@@ -246,7 +246,7 @@ export const QUICK_ACTIONS: QuickActionDef[] = [
     label: ux.quickActions.receipt,
     hint: ux.quickActions.receiptHint,
     icon: "pi pi-arrow-down-left",
-    path: "/payments/new",
+    path: "/payments/new?flow=receipt",
     tone: "accent",
   },
   {
@@ -254,7 +254,7 @@ export const QUICK_ACTIONS: QuickActionDef[] = [
     label: ux.quickActions.payment,
     hint: ux.quickActions.paymentHint,
     icon: "pi pi-arrow-up-right",
-    path: "/payments/new",
+    path: "/payments/new?flow=payment",
     tone: "neutral",
   },
   {
@@ -295,8 +295,9 @@ export function mobilePrimaryTabs(): NavItemDef[] {
 
 export function isNavActive(path: string, currentPath: string): boolean {
   if (path === "/") return currentPath === "/";
-  if (path === "/payments/new") {
+  const base = path.split("?")[0] ?? path;
+  if (base === "/payments/new") {
     return currentPath.startsWith("/payments");
   }
-  return currentPath.startsWith(path);
+  return currentPath.startsWith(base);
 }

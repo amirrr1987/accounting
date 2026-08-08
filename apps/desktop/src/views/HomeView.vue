@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { formatBusinessTitle } from "@hesabyar/shared";
@@ -9,6 +9,8 @@ import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
 import { useIsMobileRef } from "@/composables/useViewport";
 import { useBackendHealth } from "@/composables/useBackendHealth";
 import MoneySetupDialog from "@/components/MoneySetupDialog.vue";
+import OnboardingDialog from "@/components/OnboardingDialog.vue";
+import { useOnboarding } from "@/composables/useOnboarding";
 import HomeViewMobile from "@/views/home/HomeViewMobile.vue";
 import HomeViewDesktop from "@/views/home/HomeViewDesktop.vue";
 import { ux } from "@/locale/ux-copy";
@@ -22,6 +24,9 @@ const businessTitle = ref<string | null>(null);
 const loading = ref(false);
 const loadFailed = ref(false);
 const moneySetupOpen = ref(false);
+const onboardingOpen = ref(false);
+const { pending: onboardingPending, complete: completeOnboarding } =
+  useOnboarding();
 
 const healthLabel = computed(() => {
   if (status.value === "connected") return ux.health.connected;
@@ -48,6 +53,8 @@ async function load(): Promise<void> {
     applyMoneyDisplaySettings(business);
     if (!business.moneyDisplayConfigured) {
       moneySetupOpen.value = true;
+    } else if (onboardingPending.value) {
+      onboardingOpen.value = true;
     }
   } catch {
     loadFailed.value = true;
@@ -65,12 +72,22 @@ async function load(): Promise<void> {
 onMounted(() => {
   void load();
 });
+
+watch(moneySetupOpen, (open) => {
+  if (!open && onboardingPending.value) {
+    onboardingOpen.value = true;
+  }
+});
 </script>
 
 <template>
   <div dir="rtl">
     <Toast />
     <MoneySetupDialog v-model:visible="moneySetupOpen" />
+    <OnboardingDialog
+      v-model:visible="onboardingOpen"
+      @complete="completeOnboarding"
+    />
 
     <HomeViewMobile
       v-if="isMobile"
