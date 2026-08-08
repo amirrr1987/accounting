@@ -1,60 +1,74 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useExperienceMode } from "@/composables/useExperienceMode";
+import {
+  isNavActive,
+  mobilePrimaryTabs,
+  navLabel,
+} from "@/lib/nav-config";
 import { ux } from "@/locale/ux-copy";
 
 const router = useRouter();
 const route = useRoute();
+const { mode } = useExperienceMode();
 
-const tabs = [
-  { label: ux.nav.home, icon: "pi pi-home", path: "/" },
-  { label: ux.nav.vouchers, icon: "pi pi-book", path: "/vouchers" },
-  { label: ux.nav.invoices, icon: "pi pi-file", path: "/invoices" },
-  { label: ux.nav.ledger, icon: "pi pi-list", path: "/ledger" },
-  { label: "بیشتر", icon: "pi pi-ellipsis-h", path: "__more__" },
-] as const;
+const emit = defineEmits<{ menu: [] }>();
 
-const emit = defineEmits<{
-  more: [];
-}>();
+const tabs = computed(() => [
+  ...mobilePrimaryTabs(),
+  {
+    id: "menu",
+    path: "__menu__",
+    icon: "pi pi-th-large",
+    simpleLabel: ux.nav.menuSimple,
+    proLabel: ux.nav.menu,
+    hint: "",
+    group: "system" as const,
+  },
+]);
 
-function isActive(path: string): boolean {
-  if (path === "/") return route.path === "/";
-  if (path === "__more__") {
-    return ["/accounts", "/trial-balance", "/parties", "/products"].some((p) =>
-      route.path.startsWith(p),
-    );
-  }
-  return route.path.startsWith(path);
+function labelFor(path: string): string {
+  if (path === "__menu__") return ux.nav.menuSimple;
+  const item = mobilePrimaryTabs().find((t) => t.path === path);
+  return item ? navLabel(item, mode.value) : "";
 }
 
 function onTab(path: string): void {
-  if (path === "__more__") {
-    emit("more");
+  if (path === "__menu__") {
+    emit("menu");
     return;
   }
   void router.push(path);
+}
+
+function active(path: string): boolean {
+  if (path === "__menu__") return false;
+  return isNavActive(path, route.path);
 }
 </script>
 
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 z-50 border-t border-[var(--hy-border)] bg-[var(--hy-surface)]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+    class="fixed bottom-0 inset-x-0 z-50 border-t border-[var(--hy-border)] bg-[var(--hy-surface)]/98 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
     :aria-label="ux.nav.menu"
   >
     <ul class="grid grid-cols-5 gap-0 m-0 p-0 list-none">
       <li v-for="tab in tabs" :key="tab.path">
         <button
           type="button"
-          class="flex flex-col items-center justify-center gap-0.5 min-h-[3.25rem] w-full text-[0.65rem] sm:text-xs transition-colors duration-200"
+          class="flex flex-col items-center justify-center gap-0.5 min-h-[3.5rem] w-full px-1 transition-colors duration-200"
           :class="
-            isActive(tab.path)
+            active(tab.path)
               ? 'text-[var(--hy-primary)] font-semibold'
               : 'text-[var(--hy-muted)]'
           "
           @click="onTab(tab.path)"
         >
-          <i :class="[tab.icon, 'text-lg']" aria-hidden="true" />
-          <span>{{ tab.label }}</span>
+          <i :class="[tab.icon, 'text-xl']" aria-hidden="true" />
+          <span class="text-[0.65rem] leading-tight text-center truncate max-w-full">
+            {{ labelFor(tab.path) }}
+          </span>
         </button>
       </li>
     </ul>

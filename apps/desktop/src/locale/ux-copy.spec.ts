@@ -13,4 +13,10 @@ describe("ux copy", () => {
     expect(ux.vouchers.emptyBody).toMatch(/متوازن/);
     expect(ux.dashboard.balanceBad).toMatch(/به‌هم/);
   });
+
+  it("uses plain-language navigation in simple mode", () => {
+    expect(ux.nav.paymentsSimple).toMatch(/پول/);
+    expect(ux.navGroups.daily.title).toMatch(/روزانه/);
+    expect(ux.quickActions.sale).toBe("فروختم");
+  });
 });
