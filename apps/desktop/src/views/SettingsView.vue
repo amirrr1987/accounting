@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import Button from "primevue/button";
@@ -19,12 +19,14 @@ import {
   AUDIT_ACTION_LABELS,
   BackupSnapshotSchema,
   BUSINESS_TYPE_LABELS,
+  DISPLAY_UNIT_LABELS,
   USER_ROLE_LABELS,
   canWrite,
   type AuditLog,
   type AuditAction,
   type BusinessSettings,
   type BusinessType,
+  type DisplayUnit,
   type UserRecord,
   type UserRole,
 } from "@hesabyar/shared";
@@ -40,6 +42,7 @@ import {
 } from "@/lib/api";
 import { downloadBackupJson, readBackupFile } from "@/lib/backup-download";
 import PageHeader from "@/components/PageHeader.vue";
+import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
 
@@ -58,6 +61,7 @@ const auditLogs = ref<AuditLog[]>([]);
 const userDialog = ref(false);
 const savingUser = ref(false);
 const savingBusiness = ref(false);
+const savingMoney = ref(false);
 const restoreInput = ref<HTMLInputElement | null>(null);
 
 const businessForm = reactive({
@@ -75,12 +79,34 @@ const businessForm = reactive({
   description: "",
 });
 
+const moneyForm = reactive({
+  displayUnit: "RIAL" as DisplayUnit,
+  inputUnit: "RIAL" as DisplayUnit,
+  sameAsDisplay: true,
+});
+
 const businessTypeOptions = (
   Object.keys(BUSINESS_TYPE_LABELS) as BusinessType[]
 ).map((value) => ({
   label: BUSINESS_TYPE_LABELS[value],
   value,
 }));
+
+const displayUnitOptions = (
+  Object.keys(DISPLAY_UNIT_LABELS) as DisplayUnit[]
+).map((value) => ({
+  label: DISPLAY_UNIT_LABELS[value],
+  value,
+}));
+
+const inputModeOptions = [
+  { label: ux.settings.moneySameAsDisplay, value: true },
+  { label: ux.settings.moneyCustomInput, value: false },
+];
+
+const effectiveMoneyInputUnit = computed(() =>
+  moneyForm.sameAsDisplay ? moneyForm.displayUnit : moneyForm.inputUnit,
+);
 
 const userForm = reactive({
   username: "",
@@ -108,6 +134,13 @@ function fillBusinessForm(data: BusinessSettings): void {
   businessForm.city = data.city ?? "";
   businessForm.postalCode = data.postalCode ?? "";
   businessForm.description = data.description ?? "";
+  fillMoneyForm(data);
+}
+
+function fillMoneyForm(data: BusinessSettings): void {
+  moneyForm.displayUnit = data.displayUnit;
+  moneyForm.inputUnit = data.inputUnit;
+  moneyForm.sameAsDisplay = data.inputUnit === data.displayUnit;
 }
 
 async function loadBusiness(): Promise<void> {
@@ -141,6 +174,7 @@ async function saveBusiness(): Promise<void> {
   if (!canEditBusiness.value || !businessForm.businessName.trim()) return;
   savingBusiness.value = true;
   try {
+    const current = await fetchBusinessSettings();
     const updated = await updateBusinessSettings({
       businessName: businessForm.businessName.trim(),
       businessType: businessForm.businessType,
@@ -157,6 +191,9 @@ async function saveBusiness(): Promise<void> {
       city: businessForm.city.trim() || null,
       postalCode: businessForm.postalCode.trim() || null,
       description: businessForm.description.trim() || null,
+      displayUnit: current.displayUnit,
+      inputUnit: current.inputUnit,
+      moneyDisplayConfigured: current.moneyDisplayConfigured,
     });
     fillBusinessForm(updated);
     toast.add({
@@ -174,6 +211,44 @@ async function saveBusiness(): Promise<void> {
     savingBusiness.value = false;
   }
 }
+
+async function saveMoney(): Promise<void> {
+  if (!canEditBusiness.value) return;
+  savingMoney.value = true;
+  try {
+    const current = await fetchBusinessSettings();
+    const updated = await updateBusinessSettings({
+      ...current,
+      displayUnit: moneyForm.displayUnit,
+      inputUnit: effectiveMoneyInputUnit.value,
+      moneyDisplayConfigured: true,
+    });
+    fillMoneyForm(updated);
+    applyMoneyDisplaySettings(updated);
+    toast.add({
+      severity: "success",
+      summary: ux.settings.moneySaved,
+      life: 3000,
+    });
+  } catch {
+    toast.add({
+      severity: "error",
+      summary: ux.settings.moneyError,
+      life: 4000,
+    });
+  } finally {
+    savingMoney.value = false;
+  }
+}
+
+watch(
+  () => moneyForm.displayUnit,
+  () => {
+    if (moneyForm.sameAsDisplay) {
+      moneyForm.inputUnit = moneyForm.displayUnit;
+    }
+  },
+);
 
 function openUserDialog(): void {
   userForm.username = "";
@@ -392,6 +467,71 @@ function onRestoreFile(event: Event): void {
             class="min-h-11 md:col-span-2"
             :loading="savingBusiness"
             @click="saveBusiness"
+          />
+        </div>
+      </TabPanel>
+
+      <TabPanel :header="ux.settings.moneyTab" value="money">
+        <div class="hy-surface p-4 flex flex-col gap-4 max-w-xl">
+          <p class="text-sm text-[var(--hy-muted)] m-0 leading-relaxed">
+            {{ ux.settings.moneyStorageNote }}
+          </p>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">
+              {{ ux.settings.moneyFunctionalCurrency }}
+            </label>
+            <InputText
+              :model-value="ux.settings.moneyFunctionalCurrencyValue"
+              class="min-h-11"
+              disabled
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">
+              {{ ux.settings.moneyDisplayUnit }}
+            </label>
+            <Select
+              v-model="moneyForm.displayUnit"
+              :options="displayUnitOptions"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">
+              {{ ux.settings.moneyInputUnit }}
+            </label>
+            <Select
+              v-model="moneyForm.sameAsDisplay"
+              :options="inputModeOptions"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <div v-if="!moneyForm.sameAsDisplay" class="flex flex-col gap-1">
+            <label class="text-sm text-[var(--hy-muted)]">
+              {{ ux.moneySetup.inputUnitCustom }}
+            </label>
+            <Select
+              v-model="moneyForm.inputUnit"
+              :options="displayUnitOptions"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+              :disabled="!canEditBusiness"
+            />
+          </div>
+          <Button
+            v-if="canEditBusiness"
+            :label="ux.common.save"
+            icon="pi pi-check"
+            class="min-h-11 self-start"
+            :loading="savingMoney"
+            @click="saveMoney"
           />
         </div>
       </TabPanel>

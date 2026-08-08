@@ -38,6 +38,9 @@ export class BusinessSettingsService {
         city: input.city?.trim() || null,
         postalCode: input.postalCode?.trim() || null,
         description: input.description?.trim() || null,
+        displayUnit: input.displayUnit,
+        inputUnit: input.inputUnit,
+        moneyDisplayConfigured: input.moneyDisplayConfigured,
       },
     });
     return this.toDto(row);
@@ -64,6 +67,9 @@ export class BusinessSettingsService {
     city: string | null;
     postalCode: string | null;
     description: string | null;
+    displayUnit: BusinessSettings["displayUnit"];
+    inputUnit: BusinessSettings["inputUnit"];
+    moneyDisplayConfigured: boolean;
   }): BusinessSettings {
     return BusinessSettingsSchema.parse({
       businessName: row.businessName,
@@ -78,6 +84,9 @@ export class BusinessSettingsService {
       city: row.city,
       postalCode: row.postalCode,
       description: row.description,
+      displayUnit: row.displayUnit,
+      inputUnit: row.inputUnit,
+      moneyDisplayConfigured: row.moneyDisplayConfigured,
     });
   }
 }

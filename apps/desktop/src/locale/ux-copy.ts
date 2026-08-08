@@ -274,5 +274,30 @@ export const ux = {
     addUser: "کاربر جدید",
     userCreated: "کاربر ایجاد شد",
     userError: "عملیات کاربر ناموفق بود",
+    moneyTab: "واحد پول",
+    moneySaved: "تنظیمات واحد پول ذخیره شد",
+    moneyError: "ذخیره واحد پول ناموفق بود",
+    moneyStorageNote:
+      "مبالغ در سیستم همیشه به ریال ثبت می‌شوند. واحدهای زیر فقط نحوه نمایش و ورود را تغییر می‌دهند.",
+    moneyFunctionalCurrency: "ارز ثبت (سیستم)",
+    moneyFunctionalCurrencyValue: "ریال ایران — ثابت",
+    moneyDisplayUnit: "واحد نمایش پیش‌فرض",
+    moneyInputUnit: "واحد ورود در فرم‌ها",
+    moneySameAsDisplay: "مثل واحد نمایش",
+    moneyCustomInput: "واحد جداگانه",
+  },
+
+  moneySetup: {
+    title: "واحد پول",
+    intro: "معمولاً مبالغ را با چه واحدی وارد و در گزارش‌ها می‌بینید؟",
+    storageNote:
+      "در دفاتر حسابداری همیشه ریال ثبت می‌شود؛ این انتخاب فقط نمایش و ورود را ساده‌تر می‌کند.",
+    displayUnit: "واحد نمایش",
+    inputUnit: "واحد ورود",
+    sameAsDisplay: "مثل واحد نمایش",
+    customInput: "واحد جداگانه",
+    inputUnitCustom: "واحد ورود در فرم‌ها",
+    skip: "بعداً در تنظیمات",
+    save: "ذخیره و ادامه",
   },
 } as const;

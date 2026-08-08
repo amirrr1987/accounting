@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DisplayUnitSchema } from "../lib/money-display";
 
 export const BusinessTypeSchema = z.enum([
   "SHOP",
@@ -32,6 +33,12 @@ export const BusinessSettingsSchema = z.object({
   city: z.string().max(100).nullable(),
   postalCode: z.string().max(16).nullable(),
   description: z.string().max(1000).nullable(),
+  /** واحد نمایش در گزارش‌ها و لیست‌ها */
+  displayUnit: DisplayUnitSchema.default("RIAL"),
+  /** واحد ورود در فرم‌ها */
+  inputUnit: DisplayUnitSchema.default("RIAL"),
+  /** آیا کاربر واحد پول را در راه‌اندازی اول تنظیم کرده */
+  moneyDisplayConfigured: z.boolean().default(false),
 });
 export type BusinessSettings = z.infer<typeof BusinessSettingsSchema>;
 

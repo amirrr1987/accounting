@@ -3,7 +3,7 @@ import Menubar from "primevue/menubar";
 import Drawer from "primevue/drawer";
 import Tag from "primevue/tag";
 import Button from "primevue/button";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import MobileBottomNav from "@/components/MobileBottomNav.vue";
 import { useBackendHealth } from "@/composables/useBackendHealth";
@@ -12,6 +12,8 @@ import { useAppShortcuts } from "@/composables/useAppShortcuts";
 import { useAuth } from "@/composables/useAuth";
 import { useViewport } from "@/composables/useViewport";
 import { usePermissions } from "@/composables/usePermissions";
+import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
+import { fetchBusinessSettings } from "@/lib/api";
 import { ux } from "@/locale/ux-copy";
 
 const router = useRouter();
@@ -99,6 +101,24 @@ async function logout(): Promise<void> {
   drawerOpen.value = false;
   await router.push("/login");
 }
+
+async function loadMoneyDisplay(): Promise<void> {
+  if (!isAuthenticated.value) return;
+  try {
+    const settings = await fetchBusinessSettings();
+    applyMoneyDisplaySettings(settings);
+  } catch {
+    /* defaults: RIAL */
+  }
+}
+
+watch(
+  isAuthenticated,
+  (authed) => {
+    if (authed) void loadMoneyDisplay();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

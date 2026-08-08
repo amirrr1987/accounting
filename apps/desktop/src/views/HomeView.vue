@@ -11,6 +11,8 @@ import type { DashboardSummary } from "@hesabyar/shared";
 import { formatBusinessTitle } from "@hesabyar/shared";
 import { fetchDashboard, fetchBusinessSettings } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
+import MoneySetupDialog from "@/components/MoneySetupDialog.vue";
 import { useBackendHealth } from "@/composables/useBackendHealth";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -27,6 +29,7 @@ const summary = ref<DashboardSummary | null>(null);
 const businessTitle = ref<string | null>(null);
 const loading = ref(false);
 const loadFailed = ref(false);
+const moneySetupOpen = ref(false);
 
 const shortcuts = [
   { label: ux.vouchers.create, icon: "pi pi-plus", to: "/vouchers/new" },
@@ -116,6 +119,10 @@ async function load(): Promise<void> {
     ]);
     summary.value = dash;
     businessTitle.value = formatBusinessTitle(business);
+    applyMoneyDisplaySettings(business);
+    if (!business.moneyDisplayConfigured) {
+      moneySetupOpen.value = true;
+    }
   } catch {
     loadFailed.value = true;
     toast.add({
@@ -137,6 +144,7 @@ onMounted(() => {
 <template>
   <div class="hy-page" dir="rtl">
     <Toast />
+    <MoneySetupDialog v-model:visible="moneySetupOpen" />
 
     <PageHeader
       :title="businessTitle ?? ux.dashboard.title"

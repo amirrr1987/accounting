@@ -1,15 +1,39 @@
-/** نمایش مبلغ به فرمت فارسی */
+import {
+  formatMoneyRial,
+  normalizeMoneyDigits,
+  parseDisplayInputToRial,
+} from "@hesabyar/shared";
+import {
+  formatMoneyForDisplay,
+  getDisplayUnit,
+  getInputUnit,
+  parseMoneyInputForDisplay,
+} from "@/composables/useMoneyDisplay";
+
+/** نمایش مبلغ به فرمت فارسی با واحد نمایش تنظیم‌شده */
 export function formatMoneyFa(value: string | number | bigint): string {
-  const n = typeof value === "bigint" ? Number(value) : Number(value);
-  if (!Number.isFinite(n)) return "۰";
-  return new Intl.NumberFormat("fa-IR").format(n);
+  return formatMoneyForDisplay(value);
 }
 
-/** حذف جداکننده و تبدیل ارقام فارسی به انگلیسی برای ارسال به API */
-export function parseMoneyInput(raw: string): string {
-  const persian = "۰۱۲۳۴۵۶۷۸۹";
-  const normalized = raw
-    .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)))
-    .replace(/[^\d]/g, "");
-  return normalized === "" ? "0" : normalized.replace(/^0+(?=\d)/, "");
+/** نمایش صریح با واحد مشخص (بدون وابستگی به تنظیمات) */
+export function formatMoneyFaUnit(
+  value: string | number | bigint,
+  unit: Parameters<typeof formatMoneyRial>[1],
+): string {
+  return formatMoneyRial(value, unit);
 }
+
+/** حذف جداکننده و تبدیل ارقام فارسی؛ خروجی ریال برای API */
+export function parseMoneyInput(raw: string): string {
+  return parseMoneyInputForDisplay(raw);
+}
+
+/** فقط نرمال‌سازی ارقام (بدون ضرب واحد) */
+export { normalizeMoneyDigits as parseMoneyDigitsOnly };
+
+/** @deprecated از parseMoneyInput استفاده کنید */
+export function parseMoneyInputRialOnly(raw: string): string {
+  return normalizeMoneyDigits(raw);
+}
+
+export { getDisplayUnit, getInputUnit };

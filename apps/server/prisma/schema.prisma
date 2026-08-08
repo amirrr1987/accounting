@@ -417,22 +417,32 @@ model CheckEvent {
   @@map("check_events")
 }
 
+enum DisplayUnit {
+  RIAL
+  TOMAN
+  THOUSAND_RIAL
+  THOUSAND_TOMAN
+}
+
 model BusinessSettings {
-  id                 String       @id @default("default")
-  businessName       String       @default("کسب‌وکار من")
-  businessType       BusinessType @default(SHOP)
-  businessTypeCustom String?
-  legalName          String?
-  nationalId         String?
-  economicCode       String?
-  phone              String?
-  mobile             String?
-  address            String?
-  city               String?
-  postalCode         String?
-  description        String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                     String       @id @default("default")
+  businessName           String       @default("کسب‌وکار من")
+  businessType           BusinessType @default(SHOP)
+  businessTypeCustom     String?
+  legalName              String?
+  nationalId             String?
+  economicCode           String?
+  phone                  String?
+  mobile                 String?
+  address                String?
+  city                   String?
+  postalCode             String?
+  description            String?
+  displayUnit            DisplayUnit  @default(RIAL)
+  inputUnit              DisplayUnit  @default(RIAL)
+  moneyDisplayConfigured Boolean      @default(false)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   @@map("business_settings")
 }

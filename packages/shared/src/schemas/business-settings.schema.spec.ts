@@ -26,6 +26,9 @@ describe("business settings", () => {
         city: null,
         postalCode: null,
         description: null,
+        displayUnit: "RIAL",
+        inputUnit: "RIAL",
+        moneyDisplayConfigured: false,
       }),
     ).toBe("کارگاه رضایی");
   });
@@ -45,6 +48,9 @@ describe("business settings", () => {
         city: null,
         postalCode: null,
         description: null,
+        displayUnit: "TOMAN",
+        inputUnit: "TOMAN",
+        moneyDisplayConfigured: true,
       }),
     ).toThrow();
   });
