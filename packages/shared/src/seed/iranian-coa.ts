@@ -22,6 +22,7 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "112", name: "حساب‌ها و اسناد دریافتنی", type: "ASSET", nature: "DEBIT", level: "SUBTOTAL", parentCode: "11" },
   { code: "11201", name: "حساب‌های دریافتنی تجاری", type: "ASSET", nature: "DEBIT", level: "DETAIL", parentCode: "112" },
   { code: "11202", name: "اسناد دریافتنی", type: "ASSET", nature: "DEBIT", level: "DETAIL", parentCode: "112" },
+  { code: "11203", name: "اسناد در جریان وصول", type: "ASSET", nature: "DEBIT", level: "DETAIL", parentCode: "112" },
   { code: "113", name: "موجودی مواد و کالا", type: "ASSET", nature: "DEBIT", level: "SUBTOTAL", parentCode: "11" },
   { code: "11301", name: "موجودی کالا", type: "ASSET", nature: "DEBIT", level: "DETAIL", parentCode: "113" },
   { code: "12", name: "دارایی‌های غیرجاری", type: "ASSET", nature: "DEBIT", level: "TOTAL", parentCode: "1" },

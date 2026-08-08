@@ -44,6 +44,7 @@ export const ux = {
     products: "کالاها",
     weightAdjustments: "کسر/اضافه بار",
     bankAccounts: "حساب‌های بانکی",
+    checks: "چک‌های صیادی",
     invoices: "فاکتورها",
     payments: "دریافت و پرداخت",
     reports: "گزارش‌ها",

@@ -37,6 +37,42 @@ const receiptMethod = ref<"CASH" | "CHECK_RECEIVABLE">("CASH");
 const paymentMethod = ref<"CASH" | "CHECK_PAYABLE">("CASH");
 const saving = ref(false);
 
+const checkForm = ref({
+  sayyadNumber: "",
+  issueJalali: todayJalali(),
+  dueJalali: todayJalali(),
+  drawerNationalId: "",
+  drawerMobile: "",
+  bankName: "",
+  branchCode: "",
+  accountNumber: "",
+});
+
+function isCheckValid(): boolean {
+  const c = checkForm.value;
+  return (
+    /^\d{16}$/.test(c.sayyadNumber) &&
+    /^\d{10}$/.test(c.drawerNationalId) &&
+    /^09\d{9}$/.test(c.drawerMobile) &&
+    c.bankName.trim().length > 0 &&
+    c.dueJalali >= c.issueJalali
+  );
+}
+
+function checkPayload() {
+  const c = checkForm.value;
+  return {
+    sayyadNumber: c.sayyadNumber,
+    issueJalali: c.issueJalali,
+    dueJalali: c.dueJalali,
+    drawerNationalId: c.drawerNationalId,
+    drawerMobile: c.drawerMobile,
+    bankName: c.bankName.trim(),
+    branchCode: c.branchCode.trim() || null,
+    accountNumber: c.accountNumber.trim() || null,
+  };
+}
+
 const customers = ref<Party[]>([]);
 const suppliers = ref<Party[]>([]);
 const cashAccounts = ref<Account[]>([]);
@@ -54,13 +90,13 @@ const paymentMethodOptions = [
 
 const canSaveReceipt = computed(() => {
   if (!receiptPartyId.value || !amount.value || amount.value <= 0) return false;
-  if (receiptMethod.value === "CHECK_RECEIVABLE") return true;
+  if (receiptMethod.value === "CHECK_RECEIVABLE") return isCheckValid();
   return Boolean(cashAccountId.value || bankAccountId.value);
 });
 
 const canSavePayment = computed(() => {
   if (!paymentPartyId.value || !amount.value || amount.value <= 0) return false;
-  if (paymentMethod.value === "CHECK_PAYABLE") return true;
+  if (paymentMethod.value === "CHECK_PAYABLE") return isCheckValid();
   return Boolean(cashAccountId.value || bankAccountId.value);
 });
 
@@ -93,6 +129,7 @@ async function submitReceipt(): Promise<void> {
       method: receiptMethod.value,
       cashAccountId: receiptMethod.value === "CASH" ? cashAccountId.value ?? undefined : undefined,
       bankAccountId: receiptMethod.value === "CASH" ? bankAccountId.value ?? undefined : undefined,
+      check: receiptMethod.value === "CHECK_RECEIVABLE" ? checkPayload() : undefined,
       description: description.value || undefined,
     });
     toast.add({
@@ -120,6 +157,7 @@ async function submitPayment(): Promise<void> {
       method: paymentMethod.value,
       cashAccountId: paymentMethod.value === "CASH" ? cashAccountId.value ?? undefined : undefined,
       bankAccountId: paymentMethod.value === "CASH" ? bankAccountId.value ?? undefined : undefined,
+      check: paymentMethod.value === "CHECK_PAYABLE" ? checkPayload() : undefined,
       description: description.value || undefined,
     });
     toast.add({
@@ -202,6 +240,29 @@ onMounted(() => {
               />
             </div>
           </template>
+          <template v-if="receiptMethod === 'CHECK_RECEIVABLE'">
+            <div class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]">
+              اطلاعات چک صیادی
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
+              <InputText v-model="checkForm.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
+            </div>
+            <JalaliDatePicker v-model="checkForm.issueJalali" />
+            <JalaliDatePicker v-model="checkForm.dueJalali" />
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
+              <InputText v-model="checkForm.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
+              <InputText v-model="checkForm.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <label class="text-sm text-[var(--hy-muted)]">بانک</label>
+              <InputText v-model="checkForm.bankName" class="w-full" />
+            </div>
+          </template>
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">مبلغ (ریال)</label>
             <InputNumber
@@ -276,6 +337,29 @@ onMounted(() => {
                 class="w-full"
                 @change="cashAccountId = null"
               />
+            </div>
+          </template>
+          <template v-if="paymentMethod === 'CHECK_PAYABLE'">
+            <div class="md:col-span-2 text-sm font-medium text-[var(--hy-muted)]">
+              اطلاعات چک صیادی
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
+              <InputText v-model="checkForm.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
+            </div>
+            <JalaliDatePicker v-model="checkForm.issueJalali" />
+            <JalaliDatePicker v-model="checkForm.dueJalali" />
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
+              <InputText v-model="checkForm.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
+              <InputText v-model="checkForm.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <label class="text-sm text-[var(--hy-muted)]">بانک</label>
+              <InputText v-model="checkForm.bankName" class="w-full" />
             </div>
           </template>
           <div class="flex flex-col gap-1">

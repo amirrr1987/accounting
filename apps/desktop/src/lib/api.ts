@@ -32,6 +32,12 @@ import {
   BankAccountListSchema,
   CreateBankAccountSchema,
   BankAccountSchema,
+  CheckListSchema,
+  CheckSchema,
+  CheckSummarySchema,
+  CreateCheckSchema,
+  UpdateCheckStatusSchema,
+  CheckQuerySchema,
   CloseFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
@@ -85,6 +91,11 @@ import {
   type CreateWeightAdjustmentInput,
   type BankAccount,
   type CreateBankAccountInput,
+  type Check,
+  type CheckQuery,
+  type CheckSummary,
+  type CreateCheckInput,
+  type UpdateCheckStatusInput,
 } from "@hesabyar/shared";
 import { useAuth } from "@/composables/useAuth";
 import { resolveApiBaseUrl } from "@/lib/api-base";
@@ -478,6 +489,35 @@ export async function createBankAccount(
 
 export async function deactivateBankAccount(id: string): Promise<void> {
   await api.patch(`/bank-accounts/${id}/deactivate`);
+}
+
+export async function fetchChecks(query?: CheckQuery): Promise<Check[]> {
+  const params = query ? CheckQuerySchema.parse(query) : undefined;
+  const { data } = await api.get<unknown>("/checks", { params });
+  return CheckListSchema.parse(data);
+}
+
+export async function fetchCheckSummary(): Promise<CheckSummary> {
+  const { data } = await api.get<unknown>("/checks/summary");
+  return CheckSummarySchema.parse(data);
+}
+
+export async function createCheck(input: CreateCheckInput): Promise<Check> {
+  const body = CreateCheckSchema.parse({
+    ...input,
+    amount: input.amount.toString(),
+  });
+  const { data } = await api.post<unknown>("/checks", body);
+  return CheckSchema.parse(data);
+}
+
+export async function updateCheckStatus(
+  id: string,
+  input: UpdateCheckStatusInput,
+): Promise<Check> {
+  const body = UpdateCheckStatusSchema.parse(input);
+  const { data } = await api.patch<unknown>(`/checks/${id}/status`, body);
+  return CheckSchema.parse(data);
 }
 
 export async function fetchFiscalYears(): Promise<FiscalYear[]> {

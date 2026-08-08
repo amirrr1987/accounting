@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MoneySchema } from "./voucher.schema";
+import { PaymentCheckDetailsSchema } from "./check.schema";
 
 const jalaliDate = z
   .string()
@@ -31,6 +32,7 @@ export const CreateReceiptSchema = z
     method: z.enum(["CASH", "CHECK_RECEIVABLE"]).default("CASH"),
     cashAccountId: z.string().uuid().optional(),
     bankAccountId: z.string().uuid().optional(),
+    check: PaymentCheckDetailsSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (data.method === "CASH" && !data.cashAccountId && !data.bankAccountId) {
@@ -38,6 +40,13 @@ export const CreateReceiptSchema = z
         code: z.ZodIssueCode.custom,
         message: "حساب نقد/بانک الزامی است",
         path: ["cashAccountId"],
+      });
+    }
+    if (data.method === "CHECK_RECEIVABLE" && !data.check) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "اطلاعات چک صیادی الزامی است",
+        path: ["check"],
       });
     }
   });
@@ -52,6 +61,7 @@ export const CreatePaymentSchema = z
     method: z.enum(["CASH", "CHECK_PAYABLE"]).default("CASH"),
     cashAccountId: z.string().uuid().optional(),
     bankAccountId: z.string().uuid().optional(),
+    check: PaymentCheckDetailsSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (data.method === "CASH" && !data.cashAccountId && !data.bankAccountId) {
@@ -59,6 +69,13 @@ export const CreatePaymentSchema = z
         code: z.ZodIssueCode.custom,
         message: "حساب نقد/بانک الزامی است",
         path: ["cashAccountId"],
+      });
+    }
+    if (data.method === "CHECK_PAYABLE" && !data.check) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "اطلاعات چک صیادی الزامی است",
+        path: ["check"],
       });
     }
   });

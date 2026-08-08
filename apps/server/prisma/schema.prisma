@@ -78,6 +78,20 @@ enum PaymentMethod {
   CHECK_RECEIVABLE
 }
 
+enum CheckKind {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum CheckStatus {
+  IN_PORTFOLIO
+  DEPOSITED
+  CLEARED
+  RETURNED
+  ENDORSED
+  PAID
+}
+
 model FiscalYear {
   id                  String   @id @default(uuid())
   title               String   @unique
@@ -134,6 +148,8 @@ model Voucher {
   lines            VoucherLine[]
   invoice          Invoice?
   weightAdjustment WeightAdjustment?
+  check            Check?       @relation("CheckReceiptVoucher")
+  checkEvents      CheckEvent[]
 
   @@index([date])
   @@index([kind])
@@ -181,6 +197,7 @@ model Party {
 
   invoices     Invoice[]
   voucherLines VoucherLine[]
+  checks       Check[]
 
   @@index([kind])
   @@index([name])
@@ -329,8 +346,55 @@ model BankAccount {
 
   coaAccount Account  @relation(fields: [coaAccountId], references: [id], onDelete: Restrict)
   vouchers   Voucher[]
+  checks     Check[]
 
   @@map("bank_accounts")
+}
+
+model Check {
+  id                 String      @id @default(uuid())
+  kind               CheckKind
+  sayyadNumber       String      @unique
+  issueDate          DateTime    @db.Date
+  dueDate            DateTime    @db.Date
+  amount             BigInt
+  partyId            String
+  drawerNationalId   String
+  drawerMobile       String
+  bankName           String
+  branchCode         String?
+  accountNumber      String?
+  status             CheckStatus @default(IN_PORTFOLIO)
+  receiptVoucherId   String?     @unique
+  bankAccountId      String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  party           Party        @relation(fields: [partyId], references: [id], onDelete: Restrict)
+  receiptVoucher  Voucher?     @relation("CheckReceiptVoucher", fields: [receiptVoucherId], references: [id], onDelete: SetNull)
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  events          CheckEvent[]
+
+  @@index([partyId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("checks")
+}
+
+model CheckEvent {
+  id        String      @id @default(uuid())
+  checkId   String
+  status    CheckStatus
+  date      DateTime    @db.Date
+  note      String?
+  voucherId String?     @unique
+  createdAt DateTime    @default(now())
+
+  check   Check    @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+
+  @@index([checkId])
+  @@map("check_events")
 }
 
 model User {

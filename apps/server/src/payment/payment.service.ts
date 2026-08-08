@@ -17,6 +17,7 @@ import {
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { FiscalYearService } from "../fiscal-year/fiscal-year.service";
+import { CheckService } from "../check/check.service";
 import { toVoucherDto } from "../voucher/voucher.mapper";
 
 @Injectable()
@@ -24,6 +25,7 @@ export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fiscalYearService: FiscalYearService,
+    private readonly checkService: CheckService,
   ) {}
 
   async createReceipt(raw: CreateReceiptInput): Promise<Voucher> {
@@ -63,7 +65,7 @@ export class PaymentService {
       });
       const number = formatReceiptNumber(seq.value);
 
-      return tx.voucher.create({
+      const voucher = await tx.voucher.create({
         data: {
           number,
           kind: "RECEIPT",
@@ -93,6 +95,19 @@ export class PaymentService {
         },
         include: { lines: true },
       });
+
+      if (input.method === "CHECK_RECEIVABLE" && input.check) {
+        await this.checkService.createFromPayment(tx, {
+          kind: "RECEIVABLE",
+          partyId: party.id,
+          amount: input.amount,
+          voucherId: voucher.id,
+          voucherDate: date,
+          check: input.check,
+        });
+      }
+
+      return voucher;
     });
 
     return toVoucherDto(created);
@@ -134,7 +149,7 @@ export class PaymentService {
       });
       const number = formatPaymentNumber(seq.value);
 
-      return tx.voucher.create({
+      const voucher = await tx.voucher.create({
         data: {
           number,
           kind: "PAYMENT",
@@ -164,6 +179,19 @@ export class PaymentService {
         },
         include: { lines: true },
       });
+
+      if (input.method === "CHECK_PAYABLE" && input.check) {
+        await this.checkService.createFromPayment(tx, {
+          kind: "PAYABLE",
+          partyId: party.id,
+          amount: input.amount,
+          voucherId: voucher.id,
+          voucherDate: date,
+          check: input.check,
+        });
+      }
+
+      return voucher;
     });
 
     return toVoucherDto(created);

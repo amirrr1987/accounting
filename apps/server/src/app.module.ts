@@ -20,6 +20,7 @@ import { UserModule } from "./user/user.module";
 import { UnitModule } from "./unit/unit.module";
 import { WeightAdjustmentModule } from "./weight-adjustment/weight-adjustment.module";
 import { BankAccountModule } from "./bank-account/bank-account.module";
+import { CheckModule } from "./check/check.module";
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { BankAccountModule } from "./bank-account/bank-account.module";
     UserModule,
     WeightAdjustmentModule,
     BankAccountModule,
+    CheckModule,
   ],
   controllers: [HealthController],
   providers: [HealthService],

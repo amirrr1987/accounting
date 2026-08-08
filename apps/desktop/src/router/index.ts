@@ -14,6 +14,8 @@ import InvoiceDetailView from "@/views/InvoiceDetailView.vue";
 import InvoiceReturnFormView from "@/views/InvoiceReturnFormView.vue";
 import UnitsView from "@/views/UnitsView.vue";
 import WeightAdjustmentsView from "@/views/WeightAdjustmentsView.vue";
+import CheckFormView from "@/views/CheckFormView.vue";
+import ChecksView from "@/views/ChecksView.vue";
 import BankAccountsView from "@/views/BankAccountsView.vue";
 import PaymentFormView from "@/views/PaymentFormView.vue";
 import ReportsView from "@/views/ReportsView.vue";
@@ -48,6 +50,8 @@ export const router = createRouter({
     { path: "/units", name: "units", component: UnitsView },
     { path: "/weight-adjustments", name: "weight-adjustments", component: WeightAdjustmentsView },
     { path: "/bank-accounts", name: "bank-accounts", component: BankAccountsView },
+    { path: "/checks", name: "checks", component: ChecksView },
+    { path: "/checks/new", name: "check-new", component: CheckFormView },
     { path: "/invoices", name: "invoices", component: InvoicesView },
     { path: "/invoices/new", name: "invoice-new", component: InvoiceFormView },
     { path: "/invoices/:id/return", name: "invoice-return", component: InvoiceReturnFormView },
