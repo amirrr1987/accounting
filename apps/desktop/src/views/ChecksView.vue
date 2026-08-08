@@ -31,11 +31,14 @@ import {
 } from "@/lib/api";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 
 const router = useRouter();
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("checks");
 
 const checks = ref<Check[]>([]);
 const summary = ref<CheckSummary | null>(null);
@@ -166,11 +169,12 @@ function severityForStatus(status: CheckStatus): "success" | "warn" | "danger" |
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
     <PageHeader
-      title="چک‌های صیادی"
-      subtitle="مدیریت چرخه عمر چک با شماره صیاد، سررسید و وضعیت"
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
     >
       <template #actions>
         <Button
@@ -227,7 +231,30 @@ function severityForStatus(status: CheckStatus): "success" | "warn" | "danger" |
     </div>
 
     <div class="hy-surface overflow-hidden">
+      <ul
+        v-if="isMobile && !loading && checks.length > 0"
+        class="list-none m-0 p-0 divide-y divide-[var(--hy-border)]"
+      >
+        <li v-for="row in checks" :key="row.id">
+          <MobileListCard
+            :title="row.partyName"
+            :subtitle="`${row.sayyadNumber} · سررسید ${row.dueJalali}`"
+            :meta="CHECK_STATUS_LABELS[row.status as CheckStatus]"
+            :meta-severity="severityForStatus(row.status)"
+            @click="openStatus(row)"
+          />
+        </li>
+      </ul>
+
+      <EmptyState
+        v-else-if="isMobile && !loading && checks.length === 0"
+        icon="pi pi-money-bill"
+        title="چکی ثبت نشده"
+        description="چک دریافتی یا پرداختی با شماره صیاد ثبت کنید"
+      />
+
       <DataTable
+        v-else
         :value="checks"
         :loading="loading"
         striped-rows

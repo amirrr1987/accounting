@@ -38,6 +38,7 @@ import {
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { CHART_COLORS } from "@/lib/chart-theme";
+import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import HyBarChart from "@/components/charts/HyBarChart.vue";
@@ -45,6 +46,7 @@ import HyDoughnutChart from "@/components/charts/HyDoughnutChart.vue";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("reports");
 const loading = ref(false);
 
 const fromJalali = ref(`${todayJalali().split("/")[0]}/01/01`);
@@ -217,9 +219,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
-    <PageHeader :title="ux.reports.title" :subtitle="ux.reports.subtitle" />
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    />
 
     <TabView>
       <TabPanel header="سود و زیان" value="0">

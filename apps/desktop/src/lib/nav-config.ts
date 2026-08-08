@@ -230,7 +230,7 @@ export const QUICK_ACTIONS: QuickActionDef[] = [
     label: ux.quickActions.sale,
     hint: ux.quickActions.saleHint,
     icon: "pi pi-shopping-cart",
-    path: "/invoices/new",
+    path: "/invoices/new?kind=SALE",
     tone: "primary",
   },
   {
@@ -238,7 +238,7 @@ export const QUICK_ACTIONS: QuickActionDef[] = [
     label: ux.quickActions.purchase,
     hint: ux.quickActions.purchaseHint,
     icon: "pi pi-shopping-bag",
-    path: "/invoices/new",
+    path: "/invoices/new?kind=PURCHASE",
     tone: "neutral",
   },
   {

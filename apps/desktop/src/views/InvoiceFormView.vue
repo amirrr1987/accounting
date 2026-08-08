@@ -14,10 +14,8 @@ import { useToast } from "primevue/usetoast";
 import {
   calcInvoiceTotals,
   calcLineSaleLoss,
-  calcCommissionAmount,
   todayJalali,
   type CreateInvoiceInput,
-  type InvoiceKind,
   type InvoicePreviewWarning,
   type InvoiceVoucherPreview,
   type Party,
@@ -32,7 +30,11 @@ import {
   previewInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { useIsMobileRef } from "@/composables/useViewport";
+import InvoiceFormMobile from "@/views/invoice/InvoiceFormMobile.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
+
+const isMobile = useIsMobileRef();
 
 type DraftLine = {
   key: number;
@@ -308,7 +310,9 @@ async function confirmSave(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-6 space-y-4 max-w-5xl mx-auto" dir="rtl">
+  <InvoiceFormMobile v-if="isMobile" />
+
+  <div v-else class="p-6 space-y-4 max-w-5xl mx-auto" dir="rtl">
     <Toast />
 
     <div class="flex flex-wrap items-center justify-between gap-3">

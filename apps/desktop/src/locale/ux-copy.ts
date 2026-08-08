@@ -435,6 +435,34 @@ export const ux = {
     },
   },
 
+  invoiceWizard: {
+    stepKind: "نوع فاکتور",
+    stepParty: "طرف‌حساب",
+    stepItems: "کالاها",
+    stepReview: "بررسی",
+    sale: "فروختم",
+    purchase: "خریدم",
+    customer: "مشتری",
+    supplier: "تأمین‌کننده",
+    descriptionOptional: "شرح (اختیاری)",
+    addLine: "ردیف دیگر",
+    summaryParty: "طرف‌حساب",
+    summaryDate: "تاریخ",
+    total: "جمع کل",
+    previewCta: "مشاهده پیش‌نمایش",
+    previewTitle: "آماده ثبت",
+    previewHint: "با تأیید، فاکتور و سند حسابداری ثبت می‌شوند",
+    confirmSave: "تأیید و ثبت",
+    saved: "فاکتور ثبت شد",
+    previewError: "پیش‌نمایش ناموفق بود",
+    saveError: "ثبت فاکتور ناموفق بود",
+    balanceOk: "تراز سند",
+    stockWarning: (name: string, qty: number) =>
+      `موجودی ${name} فقط ${qty} عدد است`,
+    belowCostWarning: (name: string) =>
+      `قیمت ${name} زیر بهای تمام‌شده است — با احتیاط ادامه دهید`,
+  },
+
   paymentWizard: {
     chooseType: "چه کاری انجام می‌دهید؟",
     receipt: "پول گرفتم",

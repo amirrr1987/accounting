@@ -19,5 +19,7 @@ describe("ux copy", () => {
     expect(ux.navGroups.daily.title).toMatch(/روزانه/);
     expect(ux.quickActions.sale).toBe("فروختم");
     expect(ux.onboarding.steps.welcome).toBeTruthy();
+    expect(ux.invoiceWizard.sale).toBe("فروختم");
+    expect(ux.invoiceWizard.stockWarning("گندم", 5)).toMatch(/5/);
   });
 });

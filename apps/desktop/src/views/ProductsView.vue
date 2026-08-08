@@ -20,11 +20,14 @@ import {
   updateProduct,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
+const { copy: pageCopy, isMobile } = usePageCopy("products");
 const products = ref<Product[]>([]);
 const units = ref<UnitOfMeasure[]>([]);
 const loading = ref(false);
@@ -164,10 +167,14 @@ async function deactivate(row: Product): Promise<void> {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
 
-    <PageHeader :title="ux.products.title" :subtitle="ux.products.subtitle">
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
       <template #actions>
         <Button
           :label="ux.products.create"
@@ -187,6 +194,21 @@ async function deactivate(row: Product): Promise<void> {
         :action-label="ux.products.emptyCta"
         @action="openCreate"
       />
+
+      <ul
+        v-else-if="isMobile"
+        class="list-none m-0 p-0 space-y-2"
+      >
+        <li v-for="row in products" :key="row.id">
+          <MobileListCard
+            :title="row.name"
+            :subtitle="row.sku"
+            :meta="formatMoneyFa(row.unitPrice)"
+            :meta-severity="row.isActive ? 'success' : 'secondary'"
+            @click="openEdit(row)"
+          />
+        </li>
+      </ul>
 
       <DataTable
         v-else

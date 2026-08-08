@@ -9,12 +9,14 @@ import { useToast } from "primevue/usetoast";
 import type { Voucher } from "@hesabyar/shared";
 import { fetchVouchers } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 
 const toast = useToast();
 const router = useRouter();
+const { copy: pageCopy, isMobile } = usePageCopy("vouchers");
 const vouchers = ref<Voucher[]>([]);
 const loading = ref(false);
 
@@ -36,10 +38,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="hy-page" dir="rtl">
+  <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
 
-    <PageHeader :title="ux.vouchers.title" :subtitle="ux.vouchers.subtitle">
+    <PageHeader
+      :title="pageCopy.title"
+      :subtitle="pageCopy.subtitle"
+      :hint="pageCopy.hint"
+    >
       <template #actions>
         <Button
           :label="ux.vouchers.create"
