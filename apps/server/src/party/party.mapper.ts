@@ -8,6 +8,7 @@ export function toPartyDto(row: PrismaParty): Party {
     name: row.name,
     phone: row.phone,
     nationalId: row.nationalId,
+    commissionRate: row.commissionRate,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
   });

@@ -35,6 +35,8 @@ enum PartyKind {
 enum InvoiceKind {
   SALE
   PURCHASE
+  SALE_RETURN
+  PURCHASE_RETURN
 }
 
 enum VoucherKind {
@@ -145,14 +147,16 @@ model VoucherSequence {
 }
 
 model Party {
-  id         String    @id @default(uuid())
-  kind       PartyKind
-  name       String
-  phone      String?
-  nationalId String?
-  isActive   Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  kind           PartyKind
+  name           String
+  phone          String?
+  nationalId     String?
+  /// نرخ پورسانت پیش‌فرض (۰ تا ۱)
+  commissionRate Float?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   invoices     Invoice[]
   voucherLines VoucherLine[]
@@ -162,66 +166,99 @@ model Party {
   @@map("parties")
 }
 
-model Product {
-  id        String   @id @default(uuid())
-  sku       String   @unique
-  name      String
-  unitPrice BigInt
-  costPrice BigInt   @default(0)
-  stockQty  Int      @default(0)
-  vatRate   Float    @default(0.09)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model UnitOfMeasure {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  nameFa           String
+  baseUnitId       String?
+  conversionFactor Float    @default(1)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
+  baseUnit     UnitOfMeasure?  @relation("UnitConversion", fields: [baseUnitId], references: [id], onDelete: Restrict)
+  derivedUnits UnitOfMeasure[] @relation("UnitConversion")
+  products     Product[]
+  invoiceLines InvoiceLine[]
+
+  @@map("units_of_measure")
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  sku           String   @unique
+  name          String
+  unitPrice     BigInt
+  costPrice     BigInt   @default(0)
+  stockQty      Int      @default(0)
+  vatRate       Float    @default(0.09)
+  defaultUnitId String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  defaultUnit  UnitOfMeasure? @relation(fields: [defaultUnitId], references: [id], onDelete: SetNull)
   invoiceLines InvoiceLine[]
 
   @@map("products")
 }
 
 model Invoice {
-  id          String      @id @default(uuid())
-  number      String      @unique
-  kind        InvoiceKind
-  partyId     String
-  date        DateTime    @db.Date
-  description String      @default("")
-  subtotal       BigInt
-  vatAmount      BigInt
-  headerDiscount BigInt      @default(0)
-  total          BigInt
-  voucherId   String?     @unique
-  deletedAt   DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  number           String      @unique
+  kind             InvoiceKind
+  partyId          String
+  date             DateTime    @db.Date
+  description      String      @default("")
+  subtotal         BigInt
+  vatAmount        BigInt
+  headerDiscount   BigInt      @default(0)
+  total            BigInt
+  commissionAmount BigInt      @default(0)
+  commissionRate   Float?
+  returnedOfId     String?
+  returnReason     String?
+  voucherId        String?     @unique
+  deletedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-  party   Party         @relation(fields: [partyId], references: [id], onDelete: Restrict)
-  voucher Voucher?      @relation(fields: [voucherId], references: [id], onDelete: Restrict)
-  lines   InvoiceLine[]
+  party      Party         @relation(fields: [partyId], references: [id], onDelete: Restrict)
+  voucher    Voucher?      @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  returnedOf Invoice?      @relation("InvoiceReturn", fields: [returnedOfId], references: [id], onDelete: Restrict)
+  returns    Invoice[]     @relation("InvoiceReturn")
+  lines      InvoiceLine[]
 
   @@index([partyId])
   @@index([date])
   @@index([deletedAt])
+  @@index([returnedOfId])
   @@map("invoices")
 }
 
 model InvoiceLine {
-  id        String @id @default(uuid())
-  invoiceId String
-  productId String
-  quantity  Int
+  id             String  @id @default(uuid())
+  invoiceId      String
+  productId      String
+  quantity       Int
   unitPrice      BigInt
   vatRate        Float
-  discountAmount BigInt @default(0)
+  discountAmount BigInt  @default(0)
   lineNet        BigInt
-  lineVat   BigInt
-  lineTotal BigInt
-  lineOrder Int
+  lineVat        BigInt
+  lineTotal      BigInt
+  lineOrder      Int
+  sourceLineId   String?
+  unitId         String?
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  invoice    Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product    Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sourceLine InvoiceLine?   @relation("LineReturn", fields: [sourceLineId], references: [id], onDelete: Restrict)
+  returnLines InvoiceLine[] @relation("LineReturn")
+  unit       UnitOfMeasure? @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
+  @@index([sourceLineId])
   @@map("invoice_lines")
 }
 

@@ -8,21 +8,27 @@ import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import Button from "primevue/button";
 import Tag from "primevue/tag";
+import Message from "primevue/message";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import {
   calcInvoiceTotals,
+  calcLineSaleLoss,
+  calcCommissionAmount,
   todayJalali,
   type CreateInvoiceInput,
   type InvoiceKind,
+  type InvoicePreviewWarning,
   type InvoiceVoucherPreview,
   type Party,
   type Product,
+  type UnitOfMeasure,
 } from "@hesabyar/shared";
 import {
   createInvoice,
   fetchParties,
   fetchProducts,
+  fetchUnits,
   previewInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
@@ -31,6 +37,7 @@ import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 type DraftLine = {
   key: number;
   productId: string | null;
+  unitId: string | null;
   quantity: number | null;
   unitPrice: number | null;
   vatRatePercent: number | null;
@@ -42,17 +49,20 @@ const router = useRouter();
 
 const parties = ref<Party[]>([]);
 const products = ref<Product[]>([]);
+const units = ref<UnitOfMeasure[]>([]);
 const step = ref<"form" | "preview">("form");
 const preview = ref<InvoiceVoucherPreview | null>(null);
 const loadingPreview = ref(false);
 const saving = ref(false);
 
 const form = reactive({
-  kind: "SALE" as InvoiceKind,
+  kind: "SALE" as "SALE" | "PURCHASE",
   partyId: null as string | null,
   dateJalali: todayJalali(),
   description: "",
   headerDiscount: 0 as number | null,
+  commissionAmount: 0 as number | null,
+  commissionRatePercent: null as number | null,
 });
 
 let keySeq = 1;
@@ -60,6 +70,7 @@ const lines = ref<DraftLine[]>([
   {
     key: keySeq++,
     productId: null,
+    unitId: null,
     quantity: 1,
     unitPrice: null,
     vatRatePercent: 9,
@@ -107,12 +118,18 @@ const draftInput = computed((): CreateInvoiceInput | null => {
     dateJalali: form.dateJalali,
     description: form.description,
     headerDiscount: BigInt(Math.max(0, Math.trunc(form.headerDiscount ?? 0))),
+    commissionAmount: BigInt(Math.max(0, Math.trunc(form.commissionAmount ?? 0))),
+    commissionRate:
+      form.commissionRatePercent !== null
+        ? Math.max(0, Math.min(1, form.commissionRatePercent / 100))
+        : null,
     lines: validLines.map((l) => ({
       productId: l.productId as string,
       quantity: Math.trunc(l.quantity as number),
       unitPrice: BigInt(Math.trunc(l.unitPrice as number)),
       vatRate: Math.max(0, Math.min(1, (l.vatRatePercent as number) / 100)),
       discountAmount: BigInt(Math.max(0, Math.trunc(l.discountAmount ?? 0))),
+      unitId: l.unitId,
     })),
   };
 });
@@ -125,13 +142,73 @@ const clientTotals = computed(() => {
   );
 });
 
-const canPreview = computed(() => draftInput.value !== null);
+const saleWarnings = computed((): InvoicePreviewWarning[] => {
+  if (form.kind !== "SALE" || !draftInput.value) return [];
+
+  const warnings: InvoicePreviewWarning[] = [];
+  draftInput.value.lines.forEach((line, lineIndex) => {
+    const product = products.value.find((p) => p.id === line.productId);
+    if (!product) return;
+
+    if (line.quantity > product.stockQty) {
+      warnings.push({
+        type: "INSUFFICIENT_STOCK",
+        lineIndex,
+        productName: product.name,
+        message: `موجودی ${product.name} (${product.stockQty}) کمتر از ${line.quantity} است`,
+      });
+      return;
+    }
+
+    const loss = calcLineSaleLoss(
+      line.quantity,
+      line.unitPrice,
+      BigInt(product.costPrice),
+      line.discountAmount ?? 0n,
+    );
+    if (loss > 0n) {
+      warnings.push({
+        type: "BELOW_COST",
+        lineIndex,
+        productName: product.name,
+        message: `فروش ${product.name} زیر بهای تمام‌شده (${formatMoneyFa(product.costPrice)} ریال)`,
+        lossAmount: loss.toString(),
+      });
+    }
+  });
+  return warnings;
+});
+
+const hasStockError = computed(() =>
+  saleWarnings.value.some((w) => w.type === "INSUFFICIENT_STOCK"),
+);
+
+const belowCostLossTotal = computed(() =>
+  saleWarnings.value
+    .filter((w) => w.type === "BELOW_COST" && w.lossAmount)
+    .reduce((sum, w) => sum + BigInt(w.lossAmount ?? "0"), 0n),
+);
+
+function productStockLabel(productId: string | null): string | null {
+  const product = products.value.find((p) => p.id === productId);
+  if (!product) return null;
+  return `موجودی: ${product.stockQty.toLocaleString("fa-IR")}`;
+}
+
+const canPreview = computed(
+  () => draftInput.value !== null && !hasStockError.value,
+);
 
 onMounted(async () => {
   try {
-    const [p, prod] = await Promise.all([fetchParties(), fetchProducts()]);
+    const [p, prod, u] = await Promise.all([
+      fetchParties(),
+      fetchProducts(),
+      fetchUnits(),
+    ]);
     parties.value = p;
     products.value = prod;
+    units.value = u;
   } catch {
     toast.add({
       severity: "error",
@@ -146,17 +223,26 @@ function onKindChange(): void {
   form.partyId = null;
 }
 
+function onPartyChange(): void {
+  const party = parties.value.find((p) => p.id === form.partyId);
+  if (party?.commissionRate) {
+    form.commissionRatePercent = Math.round(party.commissionRate * 1000) / 10;
+  }
+}
+
 function onProductChange(line: DraftLine): void {
   const p = products.value.find((x) => x.id === line.productId);
   if (!p) return;
   line.unitPrice = Number(p.unitPrice);
   line.vatRatePercent = Math.round(p.vatRate * 1000) / 10;
+  line.unitId = p.defaultUnitId;
 }
 
 function addLine(): void {
   lines.value.push({
     key: keySeq++,
     productId: null,
+    unitId: null,
     quantity: 1,
     unitPrice: null,
     vatRatePercent: 9,
@@ -175,11 +261,15 @@ async function goPreview(): Promise<void> {
   try {
     preview.value = await previewInvoice(draftInput.value);
     step.value = "preview";
-  } catch {
+  } catch (err) {
+    const detail =
+      err instanceof Error && err.message
+        ? err.message
+        : "پیش‌نمایش سند ناموفق بود";
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "پیش‌نمایش سند ناموفق بود",
+      detail,
       life: 4000,
     });
   } finally {
@@ -258,6 +348,7 @@ async function confirmSave(): Promise<void> {
             option-value="value"
             placeholder="انتخاب…"
             filter
+            @change="onPartyChange"
           />
         </div>
         <div class="flex flex-col gap-1">
@@ -271,26 +362,60 @@ async function confirmSave(): Promise<void> {
           <label class="text-sm text-slate-600">تخفیف سر فاکتور (ریال)</label>
           <InputNumber v-model="form.headerDiscount" :min="0" class="w-full" />
         </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-slate-600">پورسانت (ریال)</label>
+          <InputNumber v-model="form.commissionAmount" :min="0" class="w-full" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-slate-600">پورسانت (٪)</label>
+          <InputNumber
+            v-model="form.commissionRatePercent"
+            :min="0"
+            :max="100"
+            :max-fraction-digits="1"
+            class="w-full"
+          />
+        </div>
       </div>
 
       <DataTable :value="lines" class="text-sm">
         <Column header="کالا">
           <template #body="{ data }">
-            <Select
-              v-model="data.productId"
-              :options="productOptions"
-              option-label="label"
-              option-value="value"
-              placeholder="کالا…"
-              filter
-              class="w-full"
-              @change="onProductChange(data)"
-            />
+            <div class="flex flex-col gap-1">
+              <Select
+                v-model="data.productId"
+                :options="productOptions"
+                option-label="label"
+                option-value="value"
+                placeholder="کالا…"
+                filter
+                class="w-full"
+                @change="onProductChange(data)"
+              />
+              <span
+                v-if="form.kind === 'SALE' && productStockLabel(data.productId)"
+                class="text-xs text-slate-500"
+              >
+                {{ productStockLabel(data.productId) }}
+              </span>
+            </div>
           </template>
         </Column>
         <Column header="تعداد" style="width: 7rem">
           <template #body="{ data }">
             <InputNumber v-model="data.quantity" :min="1" class="w-full" />
+          </template>
+        </Column>
+        <Column header="واحد" style="width: 8rem">
+          <template #body="{ data }">
+            <Select
+              v-model="data.unitId"
+              :options="units.map((u) => ({ label: u.nameFa, value: u.id }))"
+              option-label="label"
+              option-value="value"
+              placeholder="—"
+              class="w-full"
+            />
           </template>
         </Column>
         <Column header="قیمت واحد" style="width: 10rem">
@@ -327,6 +452,20 @@ async function confirmSave(): Promise<void> {
         </Column>
       </DataTable>
 
+      <div v-if="saleWarnings.length > 0" class="space-y-2">
+        <Message
+          v-for="(warning, index) in saleWarnings"
+          :key="`${warning.type}-${warning.lineIndex}-${index}`"
+          :severity="warning.type === 'INSUFFICIENT_STOCK' ? 'error' : 'warn'"
+          :closable="false"
+        >
+          {{ warning.message }}
+          <span v-if="warning.lossAmount">
+            — زیان: {{ formatMoneyFa(warning.lossAmount) }} ریال
+          </span>
+        </Message>
+      </div>
+
       <div class="flex flex-wrap items-center justify-between gap-3">
         <Button label="ردیف جدید" icon="pi pi-plus" outlined @click="addLine" />
         <div v-if="clientTotals" class="flex flex-wrap gap-4 text-sm">
@@ -334,6 +473,9 @@ async function confirmSave(): Promise<void> {
           <span>مالیات: {{ formatMoneyFa(clientTotals.vatAmount) }}</span>
           <span v-if="clientTotals.headerDiscount > 0n">
             تخفیف: {{ formatMoneyFa(clientTotals.headerDiscount) }}
+          </span>
+          <span v-if="belowCostLossTotal > 0n" class="text-amber-700">
+            زیان زیر بهای تمام‌شده: {{ formatMoneyFa(belowCostLossTotal) }}
           </span>
           <span class="font-bold">جمع: {{ formatMoneyFa(clientTotals.total) }}</span>
         </div>
@@ -362,10 +504,33 @@ async function confirmSave(): Promise<void> {
         <span v-if="preview.headerDiscount !== '0'">
           تخفیف: {{ formatMoneyFa(preview.headerDiscount) }}
         </span>
+        <span v-if="preview.commissionAmount !== '0'">
+          پورسانت: {{ formatMoneyFa(preview.commissionAmount) }}
+        </span>
         <span v-if="form.kind === 'SALE' && preview.cogsTotal !== '0'">
           بهای تمام‌شده: {{ formatMoneyFa(preview.cogsTotal) }}
         </span>
+        <span
+          v-if="form.kind === 'SALE' && preview.lossTotal !== '0'"
+          class="text-amber-700"
+        >
+          زیان زیر بهای تمام‌شده: {{ formatMoneyFa(preview.lossTotal) }}
+        </span>
         <span class="font-bold">جمع: {{ formatMoneyFa(preview.total) }}</span>
+      </div>
+
+      <div v-if="preview.warnings.length > 0" class="space-y-2">
+        <Message
+          v-for="(warning, index) in preview.warnings"
+          :key="`preview-${warning.type}-${warning.lineIndex}-${index}`"
+          :severity="warning.type === 'INSUFFICIENT_STOCK' ? 'error' : 'warn'"
+          :closable="false"
+        >
+          {{ warning.message }}
+          <span v-if="warning.lossAmount">
+            — زیان: {{ formatMoneyFa(warning.lossAmount) }} ریال
+          </span>
+        </Message>
       </div>
 
       <DataTable :value="preview.lines" class="text-sm">

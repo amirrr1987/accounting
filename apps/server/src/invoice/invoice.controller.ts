@@ -9,7 +9,9 @@ import {
 } from "@nestjs/common";
 import {
   CreateInvoiceSchema,
+  CreateReturnInvoiceSchema,
   type CreateInvoiceInput,
+  type CreateReturnInvoiceInput,
   type Invoice,
   type InvoiceVoucherPreview,
 } from "@hesabyar/shared";
@@ -26,8 +28,16 @@ export class InvoiceController {
 
   @Post("preview")
   preview(@Body() body: CreateInvoiceInput): Promise<InvoiceVoucherPreview> {
-    const parsed = CreateInvoiceSchema.parse(body);
-    return this.invoiceService.preview(parsed);
+    return this.invoiceService.preview(CreateInvoiceSchema.parse(body));
+  }
+
+  @Post("returns/preview")
+  previewReturn(
+    @Body() body: CreateReturnInvoiceInput,
+  ): Promise<InvoiceVoucherPreview> {
+    return this.invoiceService.previewReturn(
+      CreateReturnInvoiceSchema.parse(body),
+    );
   }
 
   @Get(":id")
@@ -37,8 +47,14 @@ export class InvoiceController {
 
   @Post()
   create(@Body() body: CreateInvoiceInput): Promise<Invoice> {
-    const parsed = CreateInvoiceSchema.parse(body);
-    return this.invoiceService.create(parsed);
+    return this.invoiceService.create(CreateInvoiceSchema.parse(body));
+  }
+
+  @Post("returns")
+  createReturn(@Body() body: CreateReturnInvoiceInput): Promise<Invoice> {
+    return this.invoiceService.createReturn(
+      CreateReturnInvoiceSchema.parse(body),
+    );
   }
 
   @Delete(":id")

@@ -17,6 +17,7 @@ import { PaymentModule } from "./payment/payment.module";
 import { ReportModule } from "./report/report.module";
 import { BackupModule } from "./backup/backup.module";
 import { UserModule } from "./user/user.module";
+import { UnitModule } from "./unit/unit.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { UserModule } from "./user/user.module";
     TrialBalanceModule,
     PartyModule,
     ProductModule,
+    UnitModule,
     InvoiceModule,
     FiscalYearModule,
     PaymentModule,

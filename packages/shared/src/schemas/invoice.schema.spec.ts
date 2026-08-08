@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   calcInvoiceLine,
   calcInvoiceTotals,
+  calcCommissionAmount,
+  calcReturnLineAmounts,
   CreateInvoiceSchema,
   formatInvoiceNumber,
 } from "./invoice.schema";
@@ -67,5 +69,23 @@ describe("CreateInvoiceSchema", () => {
 describe("formatInvoiceNumber", () => {
   it("uses Persian digits", () => {
     expect(formatInvoiceNumber(1)).toBe("فاکتور-۰۰۰۱");
+  });
+});
+
+describe("calcCommissionAmount", () => {
+  it("uses explicit amount when set", () => {
+    expect(calcCommissionAmount(100_000n, 0n, 0.1, 5_000n)).toBe(5_000n);
+  });
+
+  it("computes from rate", () => {
+    expect(calcCommissionAmount(100_000n, 0n, 0.05)).toBe(5_000n);
+  });
+});
+
+describe("calcReturnLineAmounts", () => {
+  it("applies proportional discount", () => {
+    const r = calcReturnLineAmounts(10, 2, 100_000n, 0.09, 100_000n);
+    expect(r.discountAmount).toBe(20_000n);
+    expect(r.lineNet).toBe(180_000n);
   });
 });

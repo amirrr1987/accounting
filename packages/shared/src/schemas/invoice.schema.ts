@@ -10,6 +10,7 @@ export const PartySchema = z.object({
   name: z.string().min(1).max(200),
   phone: z.string().max(32).nullable(),
   nationalId: z.string().max(20).nullable(),
+  commissionRate: z.number().min(0).max(1).nullable(),
   isActive: z.boolean(),
   createdAt: z.string().datetime().optional(),
 });
@@ -20,6 +21,7 @@ export const CreatePartySchema = z.object({
   name: z.string().min(1).max(200),
   phone: z.string().max(32).nullable().optional(),
   nationalId: z.string().max(20).nullable().optional(),
+  commissionRate: z.number().min(0).max(1).nullable().optional(),
   isActive: z.boolean().optional().default(true),
 });
 export type CreatePartyInput = z.infer<typeof CreatePartySchema>;
@@ -30,14 +32,12 @@ export const ProductSchema = z.object({
   id: z.string().uuid(),
   sku: z.string().min(1).max(64),
   name: z.string().min(1).max(200),
-  /** قیمت فروش واحد به ریال */
   unitPrice: z.string(),
-  /** میانگین بهای تمام‌شده واحد */
   costPrice: z.string(),
-  /** موجودی انبار */
   stockQty: z.number().int().nonnegative(),
-  /** نرخ مالیات، مثلاً 0.09 برای ۹٪ */
   vatRate: z.number().min(0).max(1),
+  defaultUnitId: z.string().uuid().nullable(),
+  defaultUnitNameFa: z.string().nullable().optional(),
   isActive: z.boolean(),
 });
 export type Product = z.infer<typeof ProductSchema>;
@@ -49,37 +49,76 @@ export const CreateProductSchema = z.object({
   costPrice: MoneySchema.optional().default(0n),
   stockQty: z.number().int().nonnegative().optional().default(0),
   vatRate: z.number().min(0).max(1).default(0.09),
+  defaultUnitId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional().default(true),
 });
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 
 export const ProductListSchema = z.array(ProductSchema);
 
-export const InvoiceKindSchema = z.enum(["SALE", "PURCHASE"]);
+export const InvoiceKindSchema = z.enum([
+  "SALE",
+  "PURCHASE",
+  "SALE_RETURN",
+  "PURCHASE_RETURN",
+]);
 export type InvoiceKind = z.infer<typeof InvoiceKindSchema>;
+
+export const INVOICE_KIND_LABELS: Record<InvoiceKind, string> = {
+  SALE: "فروش",
+  PURCHASE: "خرید",
+  SALE_RETURN: "برگشت از فروش",
+  PURCHASE_RETURN: "برگشت از خرید",
+};
+
+export function isReturnKind(kind: InvoiceKind): boolean {
+  return kind === "SALE_RETURN" || kind === "PURCHASE_RETURN";
+}
+
+export function isSaleDirection(kind: InvoiceKind): boolean {
+  return kind === "SALE" || kind === "SALE_RETURN";
+}
+
+export function returnKindFor(original: "SALE" | "PURCHASE"): InvoiceKind {
+  return original === "SALE" ? "SALE_RETURN" : "PURCHASE_RETURN";
+}
 
 export const InvoiceLineInputSchema = z.object({
   productId: z.string().uuid(),
   quantity: z.number().int().positive(),
   unitPrice: MoneySchema,
   vatRate: z.number().min(0).max(1),
-  /** تخفیف ردیف به ریال */
   discountAmount: MoneySchema.optional().default(0n),
+  unitId: z.string().uuid().nullable().optional(),
 });
 export type InvoiceLineInput = z.infer<typeof InvoiceLineInputSchema>;
 
 export const CreateInvoiceSchema = z.object({
-  kind: InvoiceKindSchema,
+  kind: z.enum(["SALE", "PURCHASE"]),
   partyId: z.string().uuid(),
-  dateJalali: z
-    .string()
-    .regex(/^\d{4}\/\d{2}\/\d{2}$/),
+  dateJalali: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/),
   description: z.string().max(1000).optional().default(""),
-  /** تخفیف سر فاکتور به ریال */
   headerDiscount: MoneySchema.optional().default(0n),
+  commissionAmount: MoneySchema.optional().default(0n),
+  commissionRate: z.number().min(0).max(1).nullable().optional(),
   lines: z.array(InvoiceLineInputSchema).min(1),
 });
 export type CreateInvoiceInput = z.infer<typeof CreateInvoiceSchema>;
+
+export const ReturnLineInputSchema = z.object({
+  sourceLineId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+});
+export type ReturnLineInput = z.infer<typeof ReturnLineInputSchema>;
+
+export const CreateReturnInvoiceSchema = z.object({
+  originalInvoiceId: z.string().uuid(),
+  dateJalali: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/),
+  returnReason: z.string().min(1).max(500),
+  description: z.string().max(1000).optional().default(""),
+  lines: z.array(ReturnLineInputSchema).min(1),
+});
+export type CreateReturnInvoiceInput = z.infer<typeof CreateReturnInvoiceSchema>;
 
 export const InvoiceLineSchema = z.object({
   id: z.string().uuid(),
@@ -92,6 +131,11 @@ export const InvoiceLineSchema = z.object({
   lineNet: z.string(),
   lineVat: z.string(),
   lineTotal: z.string(),
+  sourceLineId: z.string().uuid().nullable(),
+  unitId: z.string().uuid().nullable(),
+  unitNameFa: z.string().nullable().optional(),
+  returnedQty: z.number().int().nonnegative().optional(),
+  remainingQty: z.number().int().nonnegative().optional(),
 });
 export type InvoiceLine = z.infer<typeof InvoiceLineSchema>;
 
@@ -107,6 +151,11 @@ export const InvoiceSchema = z.object({
   vatAmount: z.string(),
   headerDiscount: z.string(),
   total: z.string(),
+  commissionAmount: z.string(),
+  commissionRate: z.number().nullable(),
+  returnedOfId: z.string().uuid().nullable(),
+  returnReason: z.string().nullable(),
+  originalInvoiceNumber: z.string().nullable().optional(),
   voucherId: z.string().uuid().nullable(),
   voucherNumber: z.string().nullable(),
   deletedAt: z.string().datetime().nullable(),
@@ -116,7 +165,6 @@ export type Invoice = z.infer<typeof InvoiceSchema>;
 
 export const InvoiceListSchema = z.array(InvoiceSchema);
 
-/** پیش‌نمایش سند خودکار قبل از تأیید فاکتور */
 export const InvoiceVoucherPreviewLineSchema = z.object({
   accountId: z.string().uuid(),
   accountCode: z.string(),
@@ -129,20 +177,31 @@ export type InvoiceVoucherPreviewLine = z.infer<
   typeof InvoiceVoucherPreviewLineSchema
 >;
 
+export const InvoicePreviewWarningSchema = z.object({
+  type: z.enum(["INSUFFICIENT_STOCK", "BELOW_COST"]),
+  lineIndex: z.number().int().nonnegative(),
+  productName: z.string(),
+  message: z.string(),
+  lossAmount: z.string().optional(),
+});
+export type InvoicePreviewWarning = z.infer<typeof InvoicePreviewWarningSchema>;
+
 export const InvoiceVoucherPreviewSchema = z.object({
   description: z.string(),
   subtotal: z.string(),
   vatAmount: z.string(),
   headerDiscount: z.string(),
+  commissionAmount: z.string(),
   cogsTotal: z.string(),
+  lossTotal: z.string(),
   total: z.string(),
   lines: z.array(InvoiceVoucherPreviewLineSchema),
+  warnings: z.array(InvoicePreviewWarningSchema),
   totalDebit: z.string(),
   totalCredit: z.string(),
 });
 export type InvoiceVoucherPreview = z.infer<typeof InvoiceVoucherPreviewSchema>;
 
-/** محاسبه مبالغ یک ردیف فاکتور (پس از تخفیف ردیف) */
 export function calcInvoiceLine(line: {
   quantity: number;
   unitPrice: bigint;
@@ -157,8 +216,7 @@ export function calcInvoiceLine(line: {
 } {
   const lineGross = line.unitPrice * BigInt(line.quantity);
   const discount = line.discountAmount ?? 0n;
-  const lineNet =
-    lineGross > discount ? lineGross - discount : 0n;
+  const lineNet = lineGross > discount ? lineGross - discount : 0n;
   const lineVat = BigInt(Math.round(Number(lineNet) * line.vatRate));
   return {
     lineGross,
@@ -167,6 +225,25 @@ export function calcInvoiceLine(line: {
     lineVat,
     lineTotal: lineNet + lineVat,
   };
+}
+
+export function calcReturnLineAmounts(
+  originalQty: number,
+  returnQty: number,
+  unitPrice: bigint,
+  vatRate: number,
+  originalDiscount: bigint,
+): ReturnType<typeof calcInvoiceLine> {
+  const proportionalDiscount =
+    originalQty > 0
+      ? (originalDiscount * BigInt(returnQty)) / BigInt(originalQty)
+      : 0n;
+  return calcInvoiceLine({
+    quantity: returnQty,
+    unitPrice,
+    vatRate,
+    discountAmount: proportionalDiscount,
+  });
 }
 
 export function calcInvoiceTotals(
@@ -203,6 +280,22 @@ export function calcInvoiceTotals(
   };
 }
 
+export function calcCommissionAmount(
+  subtotal: bigint,
+  headerDiscount: bigint,
+  commissionRate?: number | null,
+  explicitAmount?: bigint,
+): bigint {
+  if (explicitAmount !== undefined && explicitAmount > 0n) {
+    return explicitAmount;
+  }
+  if (commissionRate !== undefined && commissionRate !== null && commissionRate > 0) {
+    const base = subtotal > headerDiscount ? subtotal - headerDiscount : 0n;
+    return BigInt(Math.round(Number(base) * commissionRate));
+  }
+  return 0n;
+}
+
 const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
 function toPersianDigits(value: string): string {
   return value.replace(/\d/g, (d) => PERSIAN_DIGITS[Number(d)] ?? d);
@@ -212,12 +305,18 @@ export function formatInvoiceNumber(seq: number): string {
   return `فاکتور-${toPersianDigits(String(seq).padStart(4, "0"))}`;
 }
 
-/** کد حساب‌های استاندارد برای ثبت خودکار سند فاکتور */
+export function formatReturnInvoiceNumber(seq: number): string {
+  return `مرجوعی-${toPersianDigits(String(seq).padStart(4, "0"))}`;
+}
+
 export const INVOICE_POSTING_CODES = {
   receivable: "11201",
   payable: "21101",
   sales: "41101",
+  purchaseCommission: "41102",
   inventory: "11301",
   vatPayable: "21201",
   cogs: "51201",
+  saleLoss: "51202",
+  saleCommission: "51104",
 } as const;

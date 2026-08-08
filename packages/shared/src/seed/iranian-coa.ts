@@ -52,6 +52,7 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "41", name: "درآمد عملیاتی", type: "INCOME", nature: "CREDIT", level: "TOTAL", parentCode: "4" },
   { code: "411", name: "فروش", type: "INCOME", nature: "CREDIT", level: "SUBTOTAL", parentCode: "41" },
   { code: "41101", name: "فروش کالا و خدمات", type: "INCOME", nature: "CREDIT", level: "DETAIL", parentCode: "411" },
+  { code: "41102", name: "درآمد پورسانت خرید", type: "INCOME", nature: "CREDIT", level: "DETAIL", parentCode: "411" },
 
   // ——— هزینه‌ها ———
   { code: "5", name: "هزینه‌ها", type: "EXPENSE", nature: "DEBIT", level: "GROUP", parentCode: null },
@@ -60,6 +61,8 @@ export const IRANIAN_COA_SEED: SeedAccount[] = [
   { code: "51101", name: "حقوق و دستمزد", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "51102", name: "اجاره محل", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "51103", name: "آب، برق و گاز", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
+  { code: "51104", name: "پورسانت فروش", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "511" },
   { code: "512", name: "بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "SUBTOTAL", parentCode: "51" },
   { code: "51201", name: "بهای تمام‌شده کالای فروش رفته", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
+  { code: "51202", name: "زیان فروش زیر بهای تمام‌شده", type: "EXPENSE", nature: "DEBIT", level: "DETAIL", parentCode: "512" },
 ];

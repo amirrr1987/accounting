@@ -3,6 +3,8 @@ import {
   assertFiscalDateWritable,
   weightedAverageCost,
   lineCogsCost,
+  assertStockAvailable,
+  calcLineSaleLoss,
 } from "./inventory";
 
 describe("assertFiscalDateWritable", () => {
@@ -42,5 +44,29 @@ describe("weightedAverageCost", () => {
 describe("lineCogsCost", () => {
   it("multiplies qty by cost", () => {
     expect(lineCogsCost(3, 5000n)).toBe(15000n);
+  });
+});
+
+describe("assertStockAvailable", () => {
+  it("passes when stock is sufficient", () => {
+    expect(() => assertStockAvailable("کالا", 10, 5)).not.toThrow();
+  });
+
+  it("throws when stock is insufficient", () => {
+    expect(() => assertStockAvailable("کالا", 3, 5)).toThrow(/موجودی/);
+  });
+});
+
+describe("calcLineSaleLoss", () => {
+  it("returns zero when selling above cost", () => {
+    expect(calcLineSaleLoss(2, 100_000n, 60_000n)).toBe(0n);
+  });
+
+  it("computes loss when selling below cost", () => {
+    expect(calcLineSaleLoss(2, 50_000n, 60_000n)).toBe(20_000n);
+  });
+
+  it("accounts for line discount", () => {
+    expect(calcLineSaleLoss(1, 100_000n, 80_000n, 30_000n)).toBe(10_000n);
   });
 });

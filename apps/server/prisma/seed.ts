@@ -3,6 +3,7 @@ import * as bcrypt from "bcrypt";
 import {
   DEFAULT_ADMIN_PASSWORD,
   DEFAULT_ADMIN_USERNAME,
+  DEFAULT_UNITS,
   IRANIAN_COA_SEED,
 } from "@hesabyar/shared";
 
@@ -89,6 +90,60 @@ async function seedAccounts(): Promise<void> {
   );
 }
 
+async function seedUnits(): Promise<void> {
+  const existing = await prisma.unitOfMeasure.findMany({
+    select: { id: true, code: true },
+  });
+  const codeToId = new Map(existing.map((u) => [u.code, u.id]));
+  let created = 0;
+
+  for (const unit of DEFAULT_UNITS) {
+    if (codeToId.has(unit.code)) continue;
+    const baseUnitId =
+      unit.baseUnitId !== null
+        ? (codeToId.get(unit.baseUnitId) ?? null)
+        : null;
+
+    const row = await prisma.unitOfMeasure.create({
+      data: {
+        code: unit.code,
+        nameFa: unit.nameFa,
+        baseUnitId,
+        conversionFactor: unit.conversionFactor,
+        isActive: true,
+      },
+    });
+    codeToId.set(unit.code, row.id);
+    created += 1;
+  }
+
+  // second pass for units that depend on base codes seeded in first pass
+  for (const unit of DEFAULT_UNITS) {
+    if (codeToId.has(unit.code) && existing.some((e) => e.code === unit.code)) {
+      continue;
+    }
+    const row = await prisma.unitOfMeasure.findUnique({
+      where: { code: unit.code },
+    });
+    if (!row) continue;
+    if (unit.baseUnitId && typeof unit.baseUnitId === "string") {
+      const baseUnitId = codeToId.get(unit.baseUnitId) ?? null;
+      if (baseUnitId && row.baseUnitId !== baseUnitId) {
+        await prisma.unitOfMeasure.update({
+          where: { id: row.id },
+          data: { baseUnitId },
+        });
+      }
+    }
+  }
+
+  console.log(
+    created === 0
+      ? `Units complete — ${codeToId.size} units present`
+      : `Seeded ${created} units (${codeToId.size} total)`,
+  );
+}
+
 async function seedFiscalYear(): Promise<void> {
   const existing = await prisma.fiscalYear.findFirst();
   if (existing) {
@@ -109,6 +164,7 @@ async function seedFiscalYear(): Promise<void> {
 
 async function main(): Promise<void> {
   await seedAccounts();
+  await seedUnits();
   await seedAdmin();
   await seedFiscalYear();
 }

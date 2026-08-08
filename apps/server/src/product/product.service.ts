@@ -18,13 +18,17 @@ export class ProductService {
 
   async findAll(): Promise<Product[]> {
     const rows = await this.prisma.product.findMany({
+      include: { defaultUnit: true },
       orderBy: { name: "asc" },
     });
     return rows.map(toProductDto);
   }
 
   async findOne(id: string): Promise<Product> {
-    const row = await this.prisma.product.findUnique({ where: { id } });
+    const row = await this.prisma.product.findUnique({
+      where: { id },
+      include: { defaultUnit: true },
+    });
     if (!row) {
       throw new NotFoundException("کالا یافت نشد");
     }
@@ -42,6 +46,7 @@ export class ProductService {
           costPrice: input.costPrice ?? 0n,
           stockQty: input.stockQty ?? 0,
           vatRate: input.vatRate,
+          defaultUnitId: input.defaultUnitId ?? null,
           isActive: input.isActive ?? true,
         },
       });
@@ -70,6 +75,7 @@ export class ProductService {
           costPrice: input.costPrice ?? 0n,
           stockQty: input.stockQty ?? 0,
           vatRate: input.vatRate,
+          defaultUnitId: input.defaultUnitId ?? null,
           isActive: input.isActive ?? true,
         },
       });

@@ -11,6 +11,8 @@ import InvoicesView from "@/views/InvoicesView.vue";
 import InvoiceFormView from "@/views/InvoiceFormView.vue";
 import LoginView from "@/views/LoginView.vue";
 import InvoiceDetailView from "@/views/InvoiceDetailView.vue";
+import InvoiceReturnFormView from "@/views/InvoiceReturnFormView.vue";
+import UnitsView from "@/views/UnitsView.vue";
 import PaymentFormView from "@/views/PaymentFormView.vue";
 import ReportsView from "@/views/ReportsView.vue";
 import VoucherDetailView from "@/views/VoucherDetailView.vue";
@@ -41,8 +43,10 @@ export const router = createRouter({
     },
     { path: "/parties", name: "parties", component: PartiesView },
     { path: "/products", name: "products", component: ProductsView },
+    { path: "/units", name: "units", component: UnitsView },
     { path: "/invoices", name: "invoices", component: InvoicesView },
     { path: "/invoices/new", name: "invoice-new", component: InvoiceFormView },
+    { path: "/invoices/:id/return", name: "invoice-return", component: InvoiceReturnFormView },
     { path: "/invoices/:id", name: "invoice-detail", component: InvoiceDetailView },
     { path: "/payments/new", name: "payment-new", component: PaymentFormView },
     { path: "/reports", name: "reports", component: ReportsView },

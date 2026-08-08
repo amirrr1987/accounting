@@ -39,6 +39,7 @@ const navItems = computed((): NavItem[] => [
   { label: ux.nav.trialBalance, icon: "pi pi-chart-bar", path: "/trial-balance" },
   { label: ux.nav.parties, icon: "pi pi-users", path: "/parties" },
   { label: ux.nav.products, icon: "pi pi-box", path: "/products" },
+  { label: "واحدها", icon: "pi pi-sliders-h", path: "/units" },
   { label: ux.nav.invoices, icon: "pi pi-file", path: "/invoices" },
   { label: ux.nav.payments, icon: "pi pi-wallet", path: "/payments/new" },
   { label: ux.nav.reports, icon: "pi pi-chart-line", path: "/reports" },

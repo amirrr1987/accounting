@@ -35,6 +35,7 @@ export class PartyService {
         name: input.name,
         phone: input.phone ?? null,
         nationalId: input.nationalId ?? null,
+        commissionRate: input.commissionRate ?? null,
         isActive: input.isActive ?? true,
       },
     });
@@ -51,6 +52,7 @@ export class PartyService {
         name: input.name,
         phone: input.phone ?? null,
         nationalId: input.nationalId ?? null,
+        commissionRate: input.commissionRate ?? null,
         isActive: input.isActive ?? true,
       },
     });

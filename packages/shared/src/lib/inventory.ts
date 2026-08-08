@@ -56,3 +56,29 @@ export function weightedAverageCost(
 export function lineCogsCost(quantity: number, unitCost: bigint): bigint {
   return unitCost * BigInt(quantity);
 }
+
+/** بررسی کافی بودن موجودی — پرتاب خطا در صورت کمبود */
+export function assertStockAvailable(
+  productName: string,
+  stockQty: number,
+  requestedQty: number,
+): void {
+  if (requestedQty > stockQty) {
+    throw new Error(
+      `موجودی ${productName} (${stockQty}) کمتر از ${requestedQty} است`,
+    );
+  }
+}
+
+/** زیان فروش یک ردیف وقتی درآمد خالص کمتر از بهای تمام‌شده است */
+export function calcLineSaleLoss(
+  quantity: number,
+  unitPrice: bigint,
+  costPrice: bigint,
+  discountAmount = 0n,
+): bigint {
+  const lineGross = unitPrice * BigInt(quantity);
+  const lineNet = lineGross > discountAmount ? lineGross - discountAmount : 0n;
+  const totalCost = lineCogsCost(quantity, costPrice);
+  return totalCost > lineNet ? totalCost - lineNet : 0n;
+}

@@ -9,7 +9,7 @@ import Toast from "primevue/toast";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
-import type { Invoice } from "@hesabyar/shared";
+import { INVOICE_KIND_LABELS, type Invoice } from "@hesabyar/shared";
 import { fetchInvoices, softDeleteInvoice } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
 import { ux } from "@/locale/ux-copy";
@@ -111,7 +111,7 @@ function confirmDelete(row: Invoice): void {
         <Column field="number" header="شماره" />
         <Column header="نوع">
           <template #body="{ data }">
-            {{ data.kind === "SALE" ? "فروش" : "خرید" }}
+            {{ INVOICE_KIND_LABELS[data.kind] }}
           </template>
         </Column>
         <Column field="partyName" header="طرف‌حساب" />

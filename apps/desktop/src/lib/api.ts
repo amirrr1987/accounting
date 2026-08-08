@@ -7,6 +7,8 @@ import {
   InvoiceListSchema,
   InvoiceSchema,
   InvoiceVoucherPreviewSchema,
+  UnitListSchema,
+  UnitOfMeasureSchema,
   LedgerReportSchema,
   LoginResponseSchema,
   MeResponseSchema,
@@ -46,13 +48,16 @@ import {
   type AccountTreeNode,
   type CreateAccountInput,
   type CreateInvoiceInput,
+  type CreateReturnInvoiceInput,
   type CreatePartyInput,
   type CreateProductInput,
+  type CreateUnitInput,
   type CreateVoucherInput,
   type DashboardSummary,
   type HealthResponse,
   type Invoice,
   type InvoiceVoucherPreview,
+  type UnitOfMeasure,
   type LedgerQuery,
   type LedgerReport,
   type LoginInput,
@@ -282,12 +287,15 @@ function invoicePayload(input: CreateInvoiceInput) {
     dateJalali: input.dateJalali,
     description: input.description ?? "",
     headerDiscount: (input.headerDiscount ?? 0n).toString(),
+    commissionAmount: (input.commissionAmount ?? 0n).toString(),
+    commissionRate: input.commissionRate ?? null,
     lines: input.lines.map((l) => ({
       productId: l.productId,
       quantity: l.quantity,
       unitPrice: l.unitPrice.toString(),
       vatRate: l.vatRate,
       discountAmount: (l.discountAmount ?? 0n).toString(),
+      unitId: l.unitId ?? null,
     })),
   };
 }
@@ -315,6 +323,54 @@ export async function createInvoice(
 export async function softDeleteInvoice(id: string): Promise<Invoice> {
   const { data } = await api.delete<unknown>(`/invoices/${id}`);
   return InvoiceSchema.parse(data);
+}
+
+function returnPayload(input: CreateReturnInvoiceInput) {
+  return {
+    originalInvoiceId: input.originalInvoiceId,
+    dateJalali: input.dateJalali,
+    returnReason: input.returnReason,
+    description: input.description ?? "",
+    lines: input.lines,
+  };
+}
+
+export async function previewReturnInvoice(
+  input: CreateReturnInvoiceInput,
+): Promise<InvoiceVoucherPreview> {
+  const { data } = await api.post<unknown>(
+    "/invoices/returns/preview",
+    returnPayload(input),
+  );
+  return InvoiceVoucherPreviewSchema.parse(data);
+}
+
+export async function createReturnInvoice(
+  input: CreateReturnInvoiceInput,
+): Promise<Invoice> {
+  const { data } = await api.post<unknown>(
+    "/invoices/returns",
+    returnPayload(input),
+  );
+  return InvoiceSchema.parse(data);
+}
+
+export async function fetchUnits(): Promise<UnitOfMeasure[]> {
+  const { data } = await api.get<unknown>("/units");
+  return UnitListSchema.parse(data);
+}
+
+export async function createUnit(input: CreateUnitInput): Promise<UnitOfMeasure> {
+  const { data } = await api.post<unknown>("/units", input);
+  return UnitOfMeasureSchema.parse(data);
+}
+
+export async function updateUnit(
+  id: string,
+  input: CreateUnitInput,
+): Promise<UnitOfMeasure> {
+  const { data } = await api.patch<unknown>(`/units/${id}`, input);
+  return UnitOfMeasureSchema.parse(data);
 }
 
 export async function fetchDashboard(): Promise<DashboardSummary> {

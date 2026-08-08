@@ -6,14 +6,16 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
+import Select from "primevue/select";
 import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
-import type { CreateProductInput, Product } from "@hesabyar/shared";
+import type { CreateProductInput, Product, UnitOfMeasure } from "@hesabyar/shared";
 import {
   createProduct,
   deleteProduct,
   fetchProducts,
+  fetchUnits,
   updateProduct,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
@@ -23,6 +25,7 @@ import EmptyState from "@/components/EmptyState.vue";
 
 const toast = useToast();
 const products = ref<Product[]>([]);
+const units = ref<UnitOfMeasure[]>([]);
 const loading = ref(false);
 const dialogVisible = ref(false);
 const saving = ref(false);
@@ -35,12 +38,14 @@ const form = reactive({
   costPrice: null as number | null,
   stockQty: 0 as number | null,
   vatRatePercent: 9 as number | null,
+  defaultUnitId: null as string | null,
 });
 
 async function load(): Promise<void> {
   loading.value = true;
   try {
     products.value = await fetchProducts();
+    units.value = await fetchUnits();
   } catch {
     toast.add({
       severity: "error",
@@ -65,6 +70,7 @@ function openCreate(): void {
   form.costPrice = null;
   form.stockQty = 0;
   form.vatRatePercent = 9;
+  form.defaultUnitId = null;
   dialogVisible.value = true;
 }
 
@@ -76,6 +82,7 @@ function openEdit(row: Product): void {
   form.costPrice = Number(row.costPrice);
   form.stockQty = row.stockQty;
   form.vatRatePercent = Math.round(row.vatRate * 1000) / 10;
+  form.defaultUnitId = row.defaultUnitId;
   dialogVisible.value = true;
 }
 
@@ -91,6 +98,7 @@ async function save(): Promise<void> {
     costPrice: BigInt(Math.trunc(form.costPrice ?? 0)),
     stockQty: Math.max(0, Math.trunc(form.stockQty ?? 0)),
     vatRate: Math.max(0, Math.min(1, (form.vatRatePercent ?? 0) / 100)),
+    defaultUnitId: form.defaultUnitId,
     isActive: true,
   };
   try {
@@ -181,6 +189,11 @@ async function deactivate(row: Product): Promise<void> {
       >
       <Column field="sku" header="کد" />
       <Column field="name" header="نام" />
+      <Column header="واحد">
+        <template #body="{ data }">
+          {{ data.defaultUnitNameFa ?? "—" }}
+        </template>
+      </Column>
       <Column header="قیمت واحد">
         <template #body="{ data }">
           {{ formatMoneyFa(data.unitPrice) }}
@@ -260,6 +273,15 @@ async function deactivate(row: Product): Promise<void> {
           :max="100"
           :min-fraction-digits="0"
           :max-fraction-digits="1"
+          class="w-full"
+        />
+        <label class="text-sm text-[var(--hy-muted)]">واحد اندازه‌گیری</label>
+        <Select
+          v-model="form.defaultUnitId"
+          :options="units.map((u) => ({ label: u.nameFa, value: u.id }))"
+          option-label="label"
+          option-value="value"
+          placeholder="انتخاب واحد…"
           class="w-full"
         />
       </div>
