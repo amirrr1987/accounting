@@ -12,7 +12,6 @@ import {
 } from "@nestjs/common";
 import {
   CreateProductSchema,
-  type CreateProductInput,
   type Product,
 } from "@hesabyar/shared";
 import { ProductService } from "./product.service";
@@ -32,7 +31,7 @@ export class ProductController {
   }
 
   @Post()
-  create(@Body() body: CreateProductInput): Promise<Product> {
+  create(@Body() body: unknown): Promise<Product> {
     const parsed = CreateProductSchema.parse(body);
     return this.productService.create(parsed);
   }
@@ -40,7 +39,7 @@ export class ProductController {
   @Patch(":id")
   update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: CreateProductInput,
+    @Body() body: unknown,
   ): Promise<Product> {
     const parsed = CreateProductSchema.parse(body);
     return this.productService.update(id, parsed);

@@ -2,7 +2,6 @@ import { Controller, Get, Post, Body, Query } from "@nestjs/common";
 import {
   CreateExpenseSchema,
   ExpenseSummaryQuerySchema,
-  type CreateExpenseInput,
   type Expense,
   type ExpenseCategory,
   type ExpenseSummary,
@@ -34,7 +33,7 @@ export class ExpenseController {
   }
 
   @Post("expenses")
-  create(@Body() body: CreateExpenseInput): Promise<Expense> {
+  create(@Body() body: unknown): Promise<Expense> {
     return this.service.create(CreateExpenseSchema.parse(body));
   }
 }

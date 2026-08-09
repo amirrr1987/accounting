@@ -16,8 +16,6 @@ import {
   UpdateAccountSchema,
   type Account,
   type AccountTreeNode,
-  type CreateAccountInput,
-  type UpdateAccountInput,
 } from "@hesabyar/shared";
 import { AccountService } from "./account.service";
 
@@ -41,7 +39,7 @@ export class AccountController {
   }
 
   @Post()
-  create(@Body() body: CreateAccountInput): Promise<Account> {
+  create(@Body() body: unknown): Promise<Account> {
     const parsed = CreateAccountSchema.parse(body);
     return this.accountService.create(parsed);
   }
@@ -49,7 +47,7 @@ export class AccountController {
   @Patch(":id")
   update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: UpdateAccountInput,
+    @Body() body: unknown,
   ): Promise<Account> {
     const parsed = UpdateAccountSchema.parse(body);
     return this.accountService.update(id, parsed);

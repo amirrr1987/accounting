@@ -66,7 +66,7 @@ export class DashboardService {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
-      this.reportService.charts(rangeFrom, rangeTo),
+      this.reportService.charts({ fromJalali: rangeFrom, toJalali: rangeTo }),
       this.reportService.managementKpis(rangeFrom, rangeTo, asOfJalali),
       this.partnerService.ownership().catch(() => null),
     ]);

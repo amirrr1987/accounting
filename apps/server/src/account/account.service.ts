@@ -18,10 +18,8 @@ import { buildAccountTree, toAccountDto } from "./account.mapper";
 
 function isUniqueConstraintError(error: unknown): boolean {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "P2002"
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
   );
 }
 

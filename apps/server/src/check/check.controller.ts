@@ -12,10 +12,7 @@ import {
   CheckQuerySchema,
   UpdateCheckStatusSchema,
   type Check,
-  type CheckQuery,
   type CheckSummary,
-  type CreateCheckInput,
-  type UpdateCheckStatusInput,
 } from "@hesabyar/shared";
 import { CheckService } from "./check.service";
 
@@ -24,7 +21,7 @@ export class CheckController {
   constructor(private readonly service: CheckService) {}
 
   @Get()
-  findAll(@Query() query: CheckQuery): Promise<Check[]> {
+  findAll(@Query() query: unknown): Promise<Check[]> {
     return this.service.findAll(CheckQuerySchema.parse(query));
   }
 
@@ -39,14 +36,14 @@ export class CheckController {
   }
 
   @Post()
-  create(@Body() body: CreateCheckInput): Promise<Check> {
+  create(@Body() body: unknown): Promise<Check> {
     return this.service.create(CreateCheckSchema.parse(body));
   }
 
   @Patch(":id/status")
   updateStatus(
     @Param("id") id: string,
-    @Body() body: UpdateCheckStatusInput,
+    @Body() body: unknown,
   ): Promise<Check> {
     return this.service.updateStatus(id, UpdateCheckStatusSchema.parse(body));
   }

@@ -2,7 +2,6 @@ import { Controller, Get, Post, Patch, Body, Param } from "@nestjs/common";
 import {
   CreateBankAccountSchema,
   type BankAccount,
-  type CreateBankAccountInput,
 } from "@hesabyar/shared";
 import { BankAccountService } from "./bank-account.service";
 
@@ -16,7 +15,7 @@ export class BankAccountController {
   }
 
   @Post()
-  create(@Body() body: CreateBankAccountInput): Promise<BankAccount> {
+  create(@Body() body: unknown): Promise<BankAccount> {
     return this.service.create(CreateBankAccountSchema.parse(body));
   }
 

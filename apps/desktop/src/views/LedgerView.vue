@@ -9,6 +9,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import type { Account, LedgerReport } from "@hesabyar/shared";
 import { fetchAccounts, fetchLedger } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { formatMoneyFa } from "@/lib/money";
 import { exportLedgerExcel, exportLedgerPdf } from "@/lib/ledger-export";
 import PageHeader from "@/components/PageHeader.vue";
@@ -61,9 +62,7 @@ async function load(): Promise<void> {
       toJalali: toJalali.value || undefined,
     });
   } catch (error: unknown) {
-    const detail =
-      (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message ?? "بارگذاری دفتر کل ناموفق بود";
+    const detail = apiErrorMessage(error, "بارگذاری دفتر کل ناموفق بود");
     toast.add({ severity: "error", summary: "خطا", detail, life: 4000 });
   } finally {
     loading.value = false;

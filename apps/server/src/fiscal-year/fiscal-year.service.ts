@@ -7,8 +7,6 @@ import {
   assertFiscalDateWritable,
   compareJalali,
   todayJalali,
-  type CloseFiscalYearInput,
-  type CreateFiscalYearInput,
   type FiscalYear,
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
@@ -41,7 +39,7 @@ export class FiscalYearService {
       : null;
   }
 
-  async create(raw: CreateFiscalYearInput): Promise<FiscalYear> {
+  async create(raw: unknown): Promise<FiscalYear> {
     const input = CreateFiscalYearSchema.parse(raw);
     const created = await this.prisma.fiscalYear.create({ data: input });
     return FiscalYearSchema.parse({
@@ -70,7 +68,7 @@ export class FiscalYearService {
     });
   }
 
-  async close(id: string, raw: CloseFiscalYearInput): Promise<FiscalYear> {
+  async close(id: string, raw: unknown): Promise<FiscalYear> {
     const input = CloseFiscalYearSchema.parse(raw);
     const row = await this.prisma.fiscalYear.findUnique({ where: { id } });
     if (!row) {

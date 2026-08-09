@@ -2,8 +2,6 @@ import { Controller, Get, Post, Body } from "@nestjs/common";
 import {
   CreateOwnerDrawingSchema,
   CreateOwnerSchema,
-  type CreateOwnerDrawingInput,
-  type CreateOwnerInput,
   type Owner,
   type OwnerDrawing,
 } from "@hesabyar/shared";
@@ -19,7 +17,7 @@ export class OwnerController {
   }
 
   @Post("owners")
-  create(@Body() body: CreateOwnerInput): Promise<Owner> {
+  create(@Body() body: unknown): Promise<Owner> {
     return this.service.create(CreateOwnerSchema.parse(body));
   }
 
@@ -30,7 +28,7 @@ export class OwnerController {
 
   @Post("owner-drawings")
   createDrawing(
-    @Body() body: CreateOwnerDrawingInput,
+    @Body() body: unknown,
   ): Promise<OwnerDrawing> {
     return this.service.createDrawing(CreateOwnerDrawingSchema.parse(body));
   }

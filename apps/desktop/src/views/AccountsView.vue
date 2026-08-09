@@ -21,6 +21,7 @@ import {
   fetchAccounts,
   updateAccount,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import {
   ACCOUNT_LEVEL_LABELS,
   ACCOUNT_NATURE_LABELS,
@@ -111,9 +112,7 @@ async function onSave(payload: CreateAccountInput): Promise<void> {
     drawerVisible.value = false;
     await load();
   } catch (error: unknown) {
-    const detail =
-      (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message ?? "عملیات ناموفق بود";
+    const detail = apiErrorMessage(error, "عملیات ناموفق بود");
     toast.add({
       severity: "error",
       summary: "خطا",
@@ -143,9 +142,7 @@ function confirmRemove(account: Account): void {
           });
           await load();
         } catch (error: unknown) {
-          const detail =
-            (error as { response?: { data?: { message?: string } } })?.response
-              ?.data?.message ?? "حذف ناموفق بود";
+          const detail = apiErrorMessage(error, "حذف ناموفق بود");
           toast.add({
             severity: "error",
             summary: "خطا",

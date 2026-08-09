@@ -1,9 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
-import {
-  type CloseFiscalYearInput,
-  type CreateFiscalYearInput,
-  type FiscalYear,
-} from "@hesabyar/shared";
+import { type FiscalYear } from "@hesabyar/shared";
 import { Roles } from "../auth/roles.decorator";
 import { FiscalYearService } from "./fiscal-year.service";
 
@@ -23,7 +19,7 @@ export class FiscalYearController {
 
   @Post()
   @Roles("ADMIN")
-  create(@Body() body: CreateFiscalYearInput): Promise<FiscalYear> {
+  create(@Body() body: unknown): Promise<FiscalYear> {
     return this.fiscalYearService.create(body);
   }
 
@@ -37,7 +33,7 @@ export class FiscalYearController {
   @Roles("ADMIN")
   close(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: CloseFiscalYearInput,
+    @Body() body: unknown,
   ): Promise<FiscalYear> {
     return this.fiscalYearService.close(id, body);
   }

@@ -27,6 +27,13 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+function isErrnoWithCode(error: unknown): error is Error & { code: string } {
+  if (!(error instanceof Error) || !("code" in error)) {
+    return false;
+  }
+  return typeof error.code === "string";
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new ZodExceptionFilter());
@@ -35,11 +42,7 @@ async function bootstrap(): Promise<void> {
   try {
     await app.listen(port);
   } catch (err: unknown) {
-    const code =
-      err && typeof err === "object" && "code" in err
-        ? String((err as { code?: string }).code)
-        : "";
-    if (code === "EADDRINUSE") {
+    if (isErrnoWithCode(err) && err.code === "EADDRINUSE") {
       console.error(
         `Port ${port} is already in use. Stop the other Nest process (or turbo/npm run dev duplicate) and retry.`,
       );

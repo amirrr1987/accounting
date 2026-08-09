@@ -3,6 +3,7 @@ import {
   CreatePartySchema,
   type CreatePartyInput,
   type Party,
+  type PartyKind,
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { toPartyDto } from "./party.mapper";
@@ -11,9 +12,9 @@ import { toPartyDto } from "./party.mapper";
 export class PartyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(kind?: string): Promise<Party[]> {
+  async findAll(kind?: PartyKind): Promise<Party[]> {
     const rows = await this.prisma.party.findMany({
-      where: kind ? { kind: kind as "CUSTOMER" | "SUPPLIER" } : undefined,
+      where: kind ? { kind } : undefined,
       orderBy: { name: "asc" },
     });
     return rows.map(toPartyDto);

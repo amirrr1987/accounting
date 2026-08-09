@@ -10,8 +10,6 @@ import {
 import {
   CreateInvoiceSchema,
   CreateReturnInvoiceSchema,
-  type CreateInvoiceInput,
-  type CreateReturnInvoiceInput,
   type Invoice,
   type InvoiceVoucherPreview,
 } from "@hesabyar/shared";
@@ -27,13 +25,13 @@ export class InvoiceController {
   }
 
   @Post("preview")
-  preview(@Body() body: CreateInvoiceInput): Promise<InvoiceVoucherPreview> {
+  preview(@Body() body: unknown): Promise<InvoiceVoucherPreview> {
     return this.invoiceService.preview(CreateInvoiceSchema.parse(body));
   }
 
   @Post("returns/preview")
   previewReturn(
-    @Body() body: CreateReturnInvoiceInput,
+    @Body() body: unknown,
   ): Promise<InvoiceVoucherPreview> {
     return this.invoiceService.previewReturn(
       CreateReturnInvoiceSchema.parse(body),
@@ -46,12 +44,12 @@ export class InvoiceController {
   }
 
   @Post()
-  create(@Body() body: CreateInvoiceInput): Promise<Invoice> {
+  create(@Body() body: unknown): Promise<Invoice> {
     return this.invoiceService.create(CreateInvoiceSchema.parse(body));
   }
 
   @Post("returns")
-  createReturn(@Body() body: CreateReturnInvoiceInput): Promise<Invoice> {
+  createReturn(@Body() body: unknown): Promise<Invoice> {
     return this.invoiceService.createReturn(
       CreateReturnInvoiceSchema.parse(body),
     );

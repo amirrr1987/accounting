@@ -7,6 +7,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { ChangePasswordSchema } from "@hesabyar/shared";
 import { changePassword } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
 
@@ -69,18 +70,7 @@ async function submit(): Promise<void> {
     });
     await router.replace("/");
   } catch (err: unknown) {
-    const message =
-      err &&
-      typeof err === "object" &&
-      "response" in err &&
-      err.response &&
-      typeof err.response === "object" &&
-      "data" in err.response &&
-      err.response.data &&
-      typeof err.response.data === "object" &&
-      "message" in err.response.data
-        ? String(err.response.data.message)
-        : ux.changePassword.errorDetail;
+    const message = apiErrorMessage(err, ux.changePassword.errorDetail);
     formError.value = message;
     toast.add({
       severity: "error",

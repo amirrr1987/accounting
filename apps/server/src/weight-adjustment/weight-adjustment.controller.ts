@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body } from "@nestjs/common";
 import {
   CreateWeightAdjustmentSchema,
-  type CreateWeightAdjustmentInput,
   type WeightAdjustment,
 } from "@hesabyar/shared";
 import { WeightAdjustmentService } from "./weight-adjustment.service";
@@ -16,7 +15,7 @@ export class WeightAdjustmentController {
   }
 
   @Post()
-  create(@Body() body: CreateWeightAdjustmentInput): Promise<WeightAdjustment> {
+  create(@Body() body: unknown): Promise<WeightAdjustment> {
     return this.service.create(CreateWeightAdjustmentSchema.parse(body));
   }
 }

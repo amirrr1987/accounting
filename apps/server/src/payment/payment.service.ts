@@ -11,8 +11,6 @@ import {
   formatReceiptNumber,
   formatPaymentNumber,
   jalaliToGregorianDate,
-  type CreatePaymentInput,
-  type CreateReceiptInput,
   type Voucher,
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
@@ -28,7 +26,7 @@ export class PaymentService {
     private readonly checkService: CheckService,
   ) {}
 
-  async createReceipt(raw: CreateReceiptInput): Promise<Voucher> {
+  async createReceipt(raw: unknown): Promise<Voucher> {
     const input = CreateReceiptSchema.parse(raw);
     await this.fiscalYearService.assertWritable(input.dateJalali);
     const party = await this.requireParty(input.partyId, "CUSTOMER");
@@ -113,7 +111,7 @@ export class PaymentService {
     return toVoucherDto(created);
   }
 
-  async createPayment(raw: CreatePaymentInput): Promise<Voucher> {
+  async createPayment(raw: unknown): Promise<Voucher> {
     const input = CreatePaymentSchema.parse(raw);
     await this.fiscalYearService.assertWritable(input.dateJalali);
     const party = await this.requireParty(input.partyId, "SUPPLIER");

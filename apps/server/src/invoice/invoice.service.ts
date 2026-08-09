@@ -24,12 +24,12 @@ import {
   toBaseQuantity,
   weightedAverageCost,
   resolveInvoiceLineUnitPrice,
+  ProductPricingModeSchema,
   type CreateInvoiceInput,
   type CreateReturnInvoiceInput,
   type Invoice,
   type InvoicePreviewWarning,
   type InvoiceVoucherPreview,
-  type ProductPricingMode,
 } from "@hesabyar/shared";
 import type { Account, InvoiceKind, UnitOfMeasure } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -525,13 +525,14 @@ export class InvoiceService {
     );
 
     const resolvedLines = input.lines.map((line) => {
-      const product = productById.get(line.productId)!;
+      const product = productById.get(line.productId);
+      if (!product) {
+        throw new BadRequestException("یکی از کالاها یافت نشد");
+      }
       const pricing = resolveInvoiceLineUnitPrice(
         {
           unitPrice: product.unitPrice,
-          pricingMode:
-            (product as { pricingMode?: ProductPricingMode }).pricingMode ??
-            "AT_INVOICE",
+          pricingMode: ProductPricingModeSchema.parse(product.pricingMode),
         },
         line.unitPrice,
       );
@@ -549,7 +550,10 @@ export class InvoiceService {
         vatRate: line.vatRate,
         discountAmount: line.discountAmount,
       });
-      const product = productById.get(line.productId)!;
+      const product = productById.get(line.productId);
+      if (!product) {
+        throw new BadRequestException("یکی از کالاها یافت نشد");
+      }
       return {
         productId: line.productId,
         quantity: line.quantity,
@@ -591,7 +595,10 @@ export class InvoiceService {
     const warnings: InvoicePreviewWarning[] = [];
 
     const stockRows: StockRow[] = resolvedLines.map((line, lineIndex) => {
-      const product = productById.get(line.productId)!;
+      const product = productById.get(line.productId);
+      if (!product) {
+        throw new BadRequestException("یکی از کالاها یافت نشد");
+      }
       const unitId = line.unitId ?? product.defaultUnitId;
       const baseQuantity = this.baseQtyForLine(line.quantity, unitId, unitById);
 
@@ -1096,7 +1103,10 @@ export class InvoiceService {
       return a;
     };
 
-    const placeholder = rows[0]!;
+    if (rows.length === 0) {
+      throw new BadRequestException("حساب‌های استاندارد فاکتور یافت نشد");
+    }
+    const placeholder = rows[0];
     return {
       receivable:
         kind === "SALE" ? pick(INVOICE_POSTING_CODES.receivable) : placeholder,

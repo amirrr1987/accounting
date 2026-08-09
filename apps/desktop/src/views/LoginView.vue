@@ -8,6 +8,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { LoginSchema } from "@hesabyar/shared";
 import { login } from "@/lib/api";
+import { apiErrorStatus } from "@/lib/api-error";
 import { buildLoginClientMeta } from "@/lib/login-client";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
@@ -100,15 +101,7 @@ async function submit(): Promise<void> {
     });
     await router.replace("/");
   } catch (err: unknown) {
-    const status =
-      err &&
-      typeof err === "object" &&
-      "response" in err &&
-      err.response &&
-      typeof err.response === "object" &&
-      "status" in err.response
-        ? Number(err.response.status)
-        : 0;
+    const status = apiErrorStatus(err) ?? 0;
     formError.value =
       status === 429 ? ux.auth.lockoutDetail : ux.auth.errorDetail;
     toast.add({

@@ -19,6 +19,7 @@ import {
   type Account,
 } from "@hesabyar/shared";
 import { createVoucher, fetchAccounts } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { formatMoneyFa } from "@/lib/money";
 import { useIsMobileRef } from "@/composables/useViewport";
 
@@ -137,9 +138,10 @@ async function save(): Promise<void> {
     });
     await router.push("/vouchers");
   } catch (error: unknown) {
-    const detail =
-      (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message ?? "ثبت سند ناموفق بود — تراز بودن را بررسی کنید";
+    const detail = apiErrorMessage(
+      error,
+      "ثبت سند ناموفق بود — تراز بودن را بررسی کنید",
+    );
     toast.add({
       severity: "error",
       summary: "خطا",

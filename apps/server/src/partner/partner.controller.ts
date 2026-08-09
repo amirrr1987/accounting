@@ -12,13 +12,10 @@ import {
   CreatePartnerDrawingSchema,
   CreatePartnerSchema,
   UpdatePartnerSchema,
-  type CreatePartnerDrawingInput,
-  type CreatePartnerInput,
   type OwnershipDashboard,
   type Partner,
   type PartnerBalanceReport,
   type PartnerDrawing,
-  type UpdatePartnerInput,
 } from "@hesabyar/shared";
 import { PartnerService } from "./partner.service";
 
@@ -51,20 +48,20 @@ export class PartnerController {
 
   @Post("drawings")
   createDrawing(
-    @Body() body: CreatePartnerDrawingInput,
+    @Body() body: unknown,
   ): Promise<PartnerDrawing> {
     return this.service.createDrawing(CreatePartnerDrawingSchema.parse(body));
   }
 
   @Post()
-  create(@Body() body: CreatePartnerInput): Promise<Partner> {
+  create(@Body() body: unknown): Promise<Partner> {
     return this.service.create(CreatePartnerSchema.parse(body));
   }
 
   @Patch(":id")
   update(
     @Param("id") id: string,
-    @Body() body: UpdatePartnerInput,
+    @Body() body: unknown,
   ): Promise<Partner> {
     return this.service.update(id, UpdatePartnerSchema.parse(body));
   }

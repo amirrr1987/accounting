@@ -8,6 +8,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { todayJalali, type TrialBalanceReport } from "@hesabyar/shared";
 import { fetchTrialBalance } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { formatMoneyFa } from "@/lib/money";
 import { printTrialBalance } from "@/lib/trial-balance-print";
 import { exportTrialBalanceExcel } from "@/lib/trial-balance-export";
@@ -37,9 +38,7 @@ async function load(): Promise<void> {
   try {
     report.value = await fetchTrialBalance({ asOfJalali: asOfJalali.value });
   } catch (error: unknown) {
-    const detail =
-      (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message ?? ux.trialBalance.loadError;
+    const detail = apiErrorMessage(error, ux.trialBalance.loadError);
     toast.add({ severity: "error", summary: "خطا", detail, life: 4000 });
   } finally {
     loading.value = false;

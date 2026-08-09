@@ -4,7 +4,6 @@ import {
   AuditLogQuerySchema,
   type AuditAction,
   type AuditLog,
-  type AuditLogQuery,
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -34,7 +33,7 @@ export class AuditService {
     });
   }
 
-  async findRecent(query: AuditLogQuery): Promise<AuditLog[]> {
+  async findRecent(query: unknown): Promise<AuditLog[]> {
     const { limit } = AuditLogQuerySchema.parse(query);
     const rows = await this.prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },

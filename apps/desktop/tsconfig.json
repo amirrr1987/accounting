@@ -13,9 +13,11 @@
     "strict": true,
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "vueCompilerOptions": {
+    "strictTemplates": true
+  },
   "references": [{ "path": "./tsconfig.node.json" }]
 }

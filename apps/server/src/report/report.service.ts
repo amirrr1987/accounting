@@ -33,14 +33,10 @@ import {
   type CheckReport,
   type DashboardManagement,
   type FinancialCharts,
-  type InventoryKardexQuery,
   type InventoryKardexReport,
   type OwnerStatusReport,
-  type PartyStatementQuery,
   type PartyStatementReport,
   type ProfitLossReport,
-  type ReportAsOfQuery,
-  type ReportRangeQuery,
   type VatReport,
 } from "@hesabyar/shared";
 import { PrismaService } from "../prisma/prisma.service";
@@ -49,7 +45,7 @@ import { PrismaService } from "../prisma/prisma.service";
 export class ReportService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async profitLoss(query: ReportRangeQuery): Promise<ProfitLossReport> {
+  async profitLoss(query: unknown): Promise<ProfitLossReport> {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
@@ -117,7 +113,7 @@ export class ReportService {
     });
   }
 
-  async balanceSheet(query: ReportAsOfQuery): Promise<BalanceSheetReport> {
+  async balanceSheet(query: unknown): Promise<BalanceSheetReport> {
     const { asOfJalali } = ReportAsOfQuerySchema.parse(query);
     const asOf = jalaliToGregorianDate(asOfJalali);
 
@@ -191,9 +187,7 @@ export class ReportService {
     });
   }
 
-  async partyStatement(
-    query: PartyStatementQuery,
-  ): Promise<PartyStatementReport> {
+  async partyStatement(query: unknown): Promise<PartyStatementReport> {
     const parsed = PartyStatementQuerySchema.parse(query);
     const party = await this.prisma.party.findUnique({
       where: { id: parsed.partyId },
@@ -276,7 +270,8 @@ export class ReportService {
     });
   }
 
-  async charts(fromJalali: string, toJalali: string): Promise<FinancialCharts> {
+  async charts(query: unknown): Promise<FinancialCharts> {
+    const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const invoices = await this.prisma.invoice.findMany({
       where: { deletedAt: null },
       select: { kind: true, total: true, date: true },
@@ -408,7 +403,7 @@ export class ReportService {
     return { receivable: ar.toString(), payable: ap.toString() };
   }
 
-  async vatReport(query: ReportRangeQuery): Promise<VatReport> {
+  async vatReport(query: unknown): Promise<VatReport> {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
@@ -532,7 +527,7 @@ export class ReportService {
     });
   }
 
-  async cashFlow(query: ReportRangeQuery): Promise<CashFlowReport> {
+  async cashFlow(query: unknown): Promise<CashFlowReport> {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
@@ -590,7 +585,7 @@ export class ReportService {
     });
   }
 
-  async checkReport(query: ReportRangeQuery): Promise<CheckReport> {
+  async checkReport(query: unknown): Promise<CheckReport> {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
@@ -651,9 +646,7 @@ export class ReportService {
     });
   }
 
-  async inventoryKardex(
-    query: InventoryKardexQuery,
-  ): Promise<InventoryKardexReport> {
+  async inventoryKardex(query: unknown): Promise<InventoryKardexReport> {
     const parsed = InventoryKardexQuerySchema.parse(query);
 
     const product = await this.prisma.product.findUnique({
@@ -777,7 +770,7 @@ export class ReportService {
     });
   }
 
-  async ownerStatus(query: ReportRangeQuery): Promise<OwnerStatusReport> {
+  async ownerStatus(query: unknown): Promise<OwnerStatusReport> {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);

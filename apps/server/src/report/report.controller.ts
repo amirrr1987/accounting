@@ -6,11 +6,8 @@ import {
   type FinancialCharts,
   type InventoryKardexReport,
   type OwnerStatusReport,
-  type PartyStatementQuery,
   type PartyStatementReport,
   type ProfitLossReport,
-  type ReportAsOfQuery,
-  type ReportRangeQuery,
   type VatReport,
 } from "@hesabyar/shared";
 import { ReportService } from "./report.service";
@@ -20,60 +17,47 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get("profit-loss")
-  profitLoss(@Query() query: ReportRangeQuery): Promise<ProfitLossReport> {
+  profitLoss(@Query() query: unknown): Promise<ProfitLossReport> {
     return this.reportService.profitLoss(query);
   }
 
   @Get("balance-sheet")
-  balanceSheet(@Query() query: ReportAsOfQuery): Promise<BalanceSheetReport> {
+  balanceSheet(@Query() query: unknown): Promise<BalanceSheetReport> {
     return this.reportService.balanceSheet(query);
   }
 
   @Get("party-statement")
-  partyStatement(
-    @Query() query: PartyStatementQuery,
-  ): Promise<PartyStatementReport> {
+  partyStatement(@Query() query: unknown): Promise<PartyStatementReport> {
     return this.reportService.partyStatement(query);
   }
 
   @Get("charts")
-  charts(
-    @Query("fromJalali") fromJalali: string,
-    @Query("toJalali") toJalali: string,
-  ): Promise<FinancialCharts> {
-    return this.reportService.charts(fromJalali, toJalali);
+  charts(@Query() query: unknown): Promise<FinancialCharts> {
+    return this.reportService.charts(query);
   }
 
   @Get("vat")
-  vatReport(@Query() query: ReportRangeQuery): Promise<VatReport> {
+  vatReport(@Query() query: unknown): Promise<VatReport> {
     return this.reportService.vatReport(query);
   }
 
   @Get("cash-flow")
-  cashFlow(@Query() query: ReportRangeQuery): Promise<CashFlowReport> {
+  cashFlow(@Query() query: unknown): Promise<CashFlowReport> {
     return this.reportService.cashFlow(query);
   }
 
   @Get("checks")
-  checkReport(@Query() query: ReportRangeQuery): Promise<CheckReport> {
+  checkReport(@Query() query: unknown): Promise<CheckReport> {
     return this.reportService.checkReport(query);
   }
 
   @Get("inventory-kardex")
-  inventoryKardex(
-    @Query("productId") productId: string,
-    @Query("fromJalali") fromJalali: string,
-    @Query("toJalali") toJalali: string,
-  ): Promise<InventoryKardexReport> {
-    return this.reportService.inventoryKardex({
-      productId,
-      fromJalali,
-      toJalali,
-    });
+  inventoryKardex(@Query() query: unknown): Promise<InventoryKardexReport> {
+    return this.reportService.inventoryKardex(query);
   }
 
   @Get("owner-status")
-  ownerStatus(@Query() query: ReportRangeQuery): Promise<OwnerStatusReport> {
+  ownerStatus(@Query() query: unknown): Promise<OwnerStatusReport> {
     return this.reportService.ownerStatus(query);
   }
 }

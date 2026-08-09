@@ -117,6 +117,7 @@ import {
   type ChangePasswordResponse,
   type MeResponse,
   type Party,
+  type PartyKind,
   type Product,
   type TrialBalanceQuery,
   type TrialBalanceReport,
@@ -313,7 +314,7 @@ export async function fetchTrialBalance(
   return TrialBalanceReportSchema.parse(data);
 }
 
-export async function fetchParties(kind?: string): Promise<Party[]> {
+export async function fetchParties(kind?: PartyKind): Promise<Party[]> {
   const { data } = await api.get<unknown>("/parties", {
     params: kind ? { kind } : undefined,
   });

@@ -11,11 +11,7 @@ import {
 import type { Request } from "express";
 import { Roles } from "../auth/roles.decorator";
 import type { JwtPayload } from "../auth/jwt-auth.guard";
-import type {
-  CreateUserInput,
-  UpdateUserInput,
-  UserRecord,
-} from "@hesabyar/shared";
+import type { UserRecord } from "@hesabyar/shared";
 import { UserService } from "./user.service";
 
 type AuthedRequest = Request & { user?: JwtPayload };
@@ -32,7 +28,7 @@ export class UserController {
 
   @Post()
   create(
-    @Body() body: CreateUserInput,
+    @Body() body: unknown,
     @Req() req: AuthedRequest,
   ): Promise<UserRecord> {
     return this.userService.create(body, req.user!.username);
@@ -41,7 +37,7 @@ export class UserController {
   @Patch(":id")
   update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: UpdateUserInput,
+    @Body() body: unknown,
     @Req() req: AuthedRequest,
   ): Promise<UserRecord> {
     return this.userService.update(id, body, req.user!.username);

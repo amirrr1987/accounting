@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import {
   CreatePartySchema,
-  type CreatePartyInput,
+  PartyKindSchema,
   type Party,
 } from "@hesabyar/shared";
 import { PartyService } from "./party.service";
@@ -24,7 +24,11 @@ export class PartyController {
 
   @Get()
   findAll(@Query("kind") kind?: string): Promise<Party[]> {
-    return this.partyService.findAll(kind);
+    const parsedKind =
+      kind === undefined || kind === ""
+        ? undefined
+        : PartyKindSchema.parse(kind);
+    return this.partyService.findAll(parsedKind);
   }
 
   @Get(":id")
@@ -33,7 +37,7 @@ export class PartyController {
   }
 
   @Post()
-  create(@Body() body: CreatePartyInput): Promise<Party> {
+  create(@Body() body: unknown): Promise<Party> {
     const parsed = CreatePartySchema.parse(body);
     return this.partyService.create(parsed);
   }
@@ -41,7 +45,7 @@ export class PartyController {
   @Patch(":id")
   update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: CreatePartyInput,
+    @Body() body: unknown,
   ): Promise<Party> {
     const parsed = CreatePartySchema.parse(body);
     return this.partyService.update(id, parsed);

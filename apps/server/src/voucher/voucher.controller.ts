@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
 import {
   CreateVoucherSchema,
-  type CreateVoucherInput,
   type Voucher,
 } from "@hesabyar/shared";
 import { VoucherService } from "./voucher.service";
@@ -21,7 +20,7 @@ export class VoucherController {
   }
 
   @Post()
-  create(@Body() body: CreateVoucherInput): Promise<Voucher> {
+  create(@Body() body: unknown): Promise<Voucher> {
     const parsed = CreateVoucherSchema.parse(body);
     return this.voucherService.create(parsed);
   }

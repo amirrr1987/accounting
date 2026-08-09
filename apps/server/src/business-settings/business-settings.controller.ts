@@ -2,7 +2,6 @@ import { Body, Controller, Get, Patch } from "@nestjs/common";
 import {
   UpdateBusinessSettingsSchema,
   type BusinessSettings,
-  type UpdateBusinessSettingsInput,
 } from "@hesabyar/shared";
 import { BusinessSettingsService } from "./business-settings.service";
 
@@ -16,7 +15,7 @@ export class BusinessSettingsController {
   }
 
   @Patch()
-  update(@Body() body: UpdateBusinessSettingsInput): Promise<BusinessSettings> {
+  update(@Body() body: unknown): Promise<BusinessSettings> {
     return this.service.update(UpdateBusinessSettingsSchema.parse(body));
   }
 }

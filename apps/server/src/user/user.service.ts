@@ -9,8 +9,6 @@ import {
   UpdateUserSchema,
   UserListSchema,
   UserRecordSchema,
-  type CreateUserInput,
-  type UpdateUserInput,
   type UserRecord,
   type UserRole,
 } from "@hesabyar/shared";
@@ -40,7 +38,7 @@ export class UserService {
     );
   }
 
-  async create(raw: CreateUserInput, actor: string): Promise<UserRecord> {
+  async create(raw: unknown, actor: string): Promise<UserRecord> {
     const input = CreateUserSchema.parse(raw);
     const existing = await this.prisma.user.findUnique({
       where: { username: input.username },
@@ -78,7 +76,7 @@ export class UserService {
 
   async update(
     id: string,
-    raw: UpdateUserInput,
+    raw: unknown,
     actor: string,
   ): Promise<UserRecord> {
     const input = UpdateUserSchema.parse(raw);
