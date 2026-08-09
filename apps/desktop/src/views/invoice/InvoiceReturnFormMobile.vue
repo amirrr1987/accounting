@@ -243,7 +243,7 @@ onMounted(async () => {
             <label class="text-xs text-[var(--hy-muted)]">
               {{ ux.returnWizard.qtyLabel }}
             </label>
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="returnQty[line.id]"
               :min="0"
               :max="line.remainingQty ?? line.quantity"

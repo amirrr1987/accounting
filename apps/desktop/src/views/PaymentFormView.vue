@@ -387,7 +387,7 @@ onMounted(() => {
           <label class="text-sm text-[var(--hy-muted)]">
             {{ ux.paymentWizard.amountLabel }} ({{ inputLabel }})
           </label>
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="amount"
             locale="fa-IR"
             :min="0"
@@ -521,6 +521,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.sayyadNumber"
                 maxlength="16"
                 dir="ltr"
@@ -532,6 +533,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.drawerNationalId"
                 maxlength="10"
                 dir="ltr"
@@ -541,6 +543,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.drawerMobile"
                 maxlength="11"
                 dir="ltr"
@@ -556,7 +559,7 @@ onMounted(() => {
             <label class="text-sm text-[var(--hy-muted)]"
               >مبلغ ({{ inputLabel }})</label
             >
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="amount"
               locale="fa-IR"
               :min="0"
@@ -641,6 +644,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1 md:col-span-2">
               <label class="text-sm text-[var(--hy-muted)]">شماره صیاد</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.sayyadNumber"
                 maxlength="16"
                 dir="ltr"
@@ -652,6 +656,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">کد ملی</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.drawerNationalId"
                 maxlength="10"
                 dir="ltr"
@@ -661,6 +666,7 @@ onMounted(() => {
             <div class="flex flex-col gap-1">
               <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
               <InputText
+                v-latin-digits
                 v-model="checkForm.drawerMobile"
                 maxlength="11"
                 dir="ltr"
@@ -676,7 +682,7 @@ onMounted(() => {
             <label class="text-sm text-[var(--hy-muted)]"
               >مبلغ ({{ inputLabel }})</label
             >
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="amount"
               locale="fa-IR"
               :min="0"

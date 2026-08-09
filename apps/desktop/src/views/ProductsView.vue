@@ -292,13 +292,13 @@ async function deactivate(row: Product): Promise<void> {
         <label class="text-sm text-[var(--hy-muted)]">نام</label>
         <InputText v-model="form.name" class="min-h-11" />
         <label class="text-sm text-[var(--hy-muted)]">قیمت واحد (ریال)</label>
-        <InputNumber v-model="form.unitPrice" :min="0" :use-grouping="true" class="w-full" />
+        <InputNumber v-latin-digits v-model="form.unitPrice" :min="0" :use-grouping="true" class="w-full" />
         <label class="text-sm text-[var(--hy-muted)]">{{ ux.products.costPrice }} (ریال)</label>
-        <InputNumber v-model="form.costPrice" :min="0" :use-grouping="true" class="w-full" />
+        <InputNumber v-latin-digits v-model="form.costPrice" :min="0" :use-grouping="true" class="w-full" />
         <label class="text-sm text-[var(--hy-muted)]">{{ ux.products.stockQty }}</label>
-        <InputNumber v-model="form.stockQty" :min="0" class="w-full" />
+        <InputNumber v-latin-digits v-model="form.stockQty" :min="0" class="w-full" />
         <label class="text-sm text-[var(--hy-muted)]">نرخ مالیات (٪)</label>
-        <InputNumber
+        <InputNumber v-latin-digits
           v-model="form.vatRatePercent"
           :min="0"
           :max="100"

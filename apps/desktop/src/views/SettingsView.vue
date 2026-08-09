@@ -441,6 +441,7 @@ function onRestoreFile(event: Event): void {
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.nationalId }}</label>
             <InputText
+              v-latin-digits
               v-model="businessForm.nationalId"
               dir="ltr"
               class="min-h-11"
@@ -450,6 +451,7 @@ function onRestoreFile(event: Event): void {
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.economicCode }}</label>
             <InputText
+              v-latin-digits
               v-model="businessForm.economicCode"
               dir="ltr"
               class="min-h-11"
@@ -459,6 +461,7 @@ function onRestoreFile(event: Event): void {
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.phone }}</label>
             <InputText
+              v-latin-digits
               v-model="businessForm.phone"
               dir="ltr"
               class="min-h-11"
@@ -468,6 +471,7 @@ function onRestoreFile(event: Event): void {
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.mobile }}</label>
             <InputText
+              v-latin-digits
               v-model="businessForm.mobile"
               dir="ltr"
               class="min-h-11"
@@ -485,6 +489,7 @@ function onRestoreFile(event: Event): void {
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[var(--hy-muted)]">{{ ux.settings.postalCode }}</label>
             <InputText
+              v-latin-digits
               v-model="businessForm.postalCode"
               dir="ltr"
               class="min-h-11"
@@ -780,6 +785,7 @@ function onRestoreFile(event: Event): void {
       <div class="flex flex-col gap-3 pt-2">
         <label class="text-sm text-[var(--hy-muted)]">نام کاربری</label>
         <InputText
+          v-latin-digits
           v-model="userForm.username"
           class="min-h-11"
           maxlength="64"
@@ -790,6 +796,7 @@ function onRestoreFile(event: Event): void {
         </p>
         <label class="text-sm text-[var(--hy-muted)]">رمز عبور</label>
         <Password
+          v-latin-digits
           v-model="userForm.password"
           :feedback="false"
           toggle-mask

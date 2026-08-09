@@ -247,9 +247,9 @@ async function deactivate(row: Party): Promise<void> {
         <label class="text-sm text-[var(--hy-muted)]">نام</label>
         <InputText v-model="form.name" class="min-h-11" />
         <label class="text-sm text-[var(--hy-muted)]">تلفن</label>
-        <InputText v-model="form.phone" class="min-h-11" />
+        <InputText v-latin-digits v-model="form.phone" class="min-h-11" />
         <label class="text-sm text-[var(--hy-muted)]">شناسه ملی</label>
-        <InputText v-model="form.nationalId" class="min-h-11" />
+        <InputText v-latin-digits v-model="form.nationalId" class="min-h-11" />
       </div>
       <template #footer>
         <Button

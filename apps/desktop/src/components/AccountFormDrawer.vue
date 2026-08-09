@@ -127,7 +127,7 @@ function submit(): void {
     <div class="flex flex-col gap-4 pt-2" dir="rtl">
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">کد حساب</label>
-        <InputText v-model="form.code" class="w-full" />
+        <InputText v-latin-digits v-model="form.code" class="w-full" />
       </div>
 
       <div class="flex flex-col gap-2">

@@ -207,7 +207,7 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="تعداد مرجوعی" style="width: 9rem">
           <template #body="{ data }">
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="returnQty[data.id]"
               :min="0"
               :max="data.remainingQty ?? data.quantity"

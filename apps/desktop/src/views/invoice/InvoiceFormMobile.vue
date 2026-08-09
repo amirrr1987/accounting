@@ -402,7 +402,7 @@ onMounted(async () => {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs text-[var(--hy-muted)]">تعداد</label>
-              <InputNumber
+              <InputNumber v-latin-digits
                 v-model="line.quantity"
                 :min="1"
                 class="w-full"
@@ -412,7 +412,7 @@ onMounted(async () => {
               <label class="text-xs text-[var(--hy-muted)]">
                 قیمت ({{ inputLabel }})
               </label>
-              <InputNumber
+              <InputNumber v-latin-digits
                 v-model="line.unitPrice"
                 :min="0"
                 class="w-full"

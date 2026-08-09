@@ -486,15 +486,15 @@ async function saveDrawing(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label>سهم مالکیت (٪)</label>
-          <InputNumber v-model="form.sharePercent" :min="0.01" :max="100" :max-fraction-digits="2" class="w-full" />
+          <InputNumber v-latin-digits v-model="form.sharePercent" :min="0.01" :max="100" :max-fraction-digits="2" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label>موبایل</label>
-          <InputText v-model="form.mobile" class="w-full" />
+          <InputText v-latin-digits v-model="form.mobile" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label>کد ملی</label>
-          <InputText v-model="form.nationalId" class="w-full" />
+          <InputText v-latin-digits v-model="form.nationalId" class="w-full" />
         </div>
       </div>
       <template #footer>
@@ -521,7 +521,7 @@ async function saveDrawing(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label>مبلغ (ریال)</label>
-          <InputNumber v-model="drawingForm.amount" :min="0" locale="fa-IR" class="w-full" />
+          <InputNumber v-latin-digits v-model="drawingForm.amount" :min="0" locale="fa-IR" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label>پرداخت از</label>

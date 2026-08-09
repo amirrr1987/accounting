@@ -229,7 +229,7 @@ async function save(): Promise<void> {
           class="w-full"
         />
         <label class="text-sm text-[var(--hy-muted)]">مقدار (واحد پایه)</label>
-        <InputNumber v-model="form.quantity" :min="1" class="w-full" />
+        <InputNumber v-latin-digits v-model="form.quantity" :min="1" class="w-full" />
         <label class="text-sm text-[var(--hy-muted)]">تاریخ</label>
         <JalaliDatePicker v-model="form.dateJalali" />
         <label class="text-sm text-[var(--hy-muted)]">فاکتور خرید مبدأ (اختیاری)</label>

@@ -228,6 +228,7 @@ onMounted(async () => {
             {{ ux.checkWizard.sayyad }}
           </label>
           <InputText
+            v-latin-digits
             v-model="form.sayyadNumber"
             maxlength="16"
             dir="ltr"
@@ -238,7 +239,7 @@ onMounted(async () => {
           <label class="text-sm text-[var(--hy-muted)]">
             {{ ux.checkWizard.amount }} ({{ inputLabel }})
           </label>
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="form.amount"
             locale="fa-IR"
             :min="0"
@@ -256,6 +257,7 @@ onMounted(async () => {
             {{ ux.checkWizard.nationalId }}
           </label>
           <InputText
+            v-latin-digits
             v-model="form.drawerNationalId"
             maxlength="10"
             dir="ltr"
@@ -267,6 +269,7 @@ onMounted(async () => {
             {{ ux.checkWizard.mobile }}
           </label>
           <InputText
+            v-latin-digits
             v-model="form.drawerMobile"
             maxlength="11"
             dir="ltr"
@@ -283,7 +286,7 @@ onMounted(async () => {
           <label class="text-sm text-[var(--hy-muted)]">
             {{ ux.checkWizard.branchOptional }}
           </label>
-          <InputText v-model="form.branchCode" class="w-full min-h-11" />
+          <InputText v-latin-digits v-model="form.branchCode" class="w-full min-h-11" />
         </div>
         <InputText
           v-model="form.description"

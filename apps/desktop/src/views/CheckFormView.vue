@@ -149,7 +149,7 @@ onMounted(() => {
       </div>
       <div class="flex flex-col gap-1 md:col-span-2">
         <label class="text-sm text-[var(--hy-muted)]">شماره صیاد (۱۶ رقم)</label>
-        <InputText v-model="form.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
+        <InputText v-latin-digits v-model="form.sayyadNumber" maxlength="16" dir="ltr" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">تاریخ صدور</label>
@@ -161,11 +161,11 @@ onMounted(() => {
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">کد ملی صادرکننده</label>
-        <InputText v-model="form.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
+        <InputText v-latin-digits v-model="form.drawerNationalId" maxlength="10" dir="ltr" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">موبایل</label>
-        <InputText v-model="form.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
+        <InputText v-latin-digits v-model="form.drawerMobile" maxlength="11" dir="ltr" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">بانک</label>
@@ -173,11 +173,11 @@ onMounted(() => {
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">شعبه (اختیاری)</label>
-        <InputText v-model="form.branchCode" class="w-full" />
+        <InputText v-latin-digits v-model="form.branchCode" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">مبلغ (ریال)</label>
-        <InputNumber v-model="form.amount" locale="fa-IR" :min="0" class="w-full" />
+        <InputNumber v-latin-digits v-model="form.amount" locale="fa-IR" :min="0" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm text-[var(--hy-muted)]">تاریخ ثبت سند</label>

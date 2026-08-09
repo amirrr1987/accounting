@@ -13,3 +13,13 @@ declare module "*.vue" {
   const component: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>;
   export default component;
 }
+
+declare module "vue" {
+  interface GlobalDirectives {
+    /** v-latin-digits — ارقام فارسی/عربی → انگلیسی؛ false برای خاموش */
+    latinDigits: import("vue").Directive<
+      HTMLElement,
+      boolean | "on" | "off" | undefined
+    >;
+  }
+}

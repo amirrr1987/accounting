@@ -154,6 +154,7 @@ async function submit(): Promise<void> {
             <span class="text-[var(--hy-danger)]" aria-hidden="true">*</span>
           </label>
           <InputText
+            v-latin-digits
             id="login-username"
             v-model="form.username"
             autocomplete="username"
@@ -183,6 +184,7 @@ async function submit(): Promise<void> {
             <span class="text-[var(--hy-danger)]" aria-hidden="true">*</span>
           </label>
           <Password
+            v-latin-digits
             input-id="login-password"
             v-model="form.password"
             :feedback="false"

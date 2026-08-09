@@ -210,9 +210,9 @@ async function deactivate(row: BankAccount): Promise<void> {
         <label class="text-sm text-[var(--hy-muted)]">عنوان حساب</label>
         <InputText v-model="form.name" class="min-h-11" placeholder="مثلاً جاری فروش" />
         <label class="text-sm text-[var(--hy-muted)]">شماره حساب (اختیاری)</label>
-        <InputText v-model="form.accountNumber" class="min-h-11" />
+        <InputText v-latin-digits v-model="form.accountNumber" class="min-h-11" />
         <label class="text-sm text-[var(--hy-muted)]">شبا (اختیاری)</label>
-        <InputText v-model="form.sheba" class="min-h-11" dir="ltr" />
+        <InputText v-latin-digits v-model="form.sheba" class="min-h-11" dir="ltr" />
       </div>
       <template #footer>
         <Button label="انصراف" text class="min-h-11" @click="dialogVisible = false" />

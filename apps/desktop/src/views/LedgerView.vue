@@ -129,11 +129,11 @@ function onPdf(): void {
       </div>
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">از تاریخ</label>
-        <InputText v-model="fromJalali" placeholder="1403/01/01" class="w-full" />
+        <InputText v-latin-digits v-model="fromJalali" placeholder="1403/01/01" class="w-full" />
       </div>
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">تا تاریخ</label>
-        <InputText v-model="toJalali" placeholder="1403/12/29" class="w-full" />
+        <InputText v-latin-digits v-model="toJalali" placeholder="1403/12/29" class="w-full" />
       </div>
     </div>
 

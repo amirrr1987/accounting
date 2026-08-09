@@ -314,6 +314,11 @@ export {
 } from "./schemas/check.schema";
 
 export {
+  toAsciiDigits,
+  hasNonAsciiDigits,
+} from "./lib/digits";
+
+export {
   DisplayUnitSchema,
   DISPLAY_UNIT_LABELS,
   DISPLAY_UNIT_SHORT_LABELS,

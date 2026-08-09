@@ -549,7 +549,7 @@ async function saveOwner(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label>مبلغ (ریال)</label>
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="expenseForm.amount"
             :min="0"
             locale="fa-IR"
@@ -634,7 +634,7 @@ async function saveOwner(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label>مبلغ (ریال)</label>
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="drawingForm.amount"
             :min="0"
             locale="fa-IR"
@@ -695,11 +695,11 @@ async function saveOwner(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label>موبایل</label>
-          <InputText v-model="ownerForm.mobile" class="w-full" />
+          <InputText v-latin-digits v-model="ownerForm.mobile" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label>کد ملی</label>
-          <InputText v-model="ownerForm.nationalId" class="w-full" />
+          <InputText v-latin-digits v-model="ownerForm.nationalId" class="w-full" />
         </div>
       </div>
       <template #footer>

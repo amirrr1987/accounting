@@ -369,15 +369,15 @@ async function confirmSave(): Promise<void> {
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm text-slate-600">تخفیف سر فاکتور (ریال)</label>
-          <InputNumber v-model="form.headerDiscount" :min="0" class="w-full" />
+          <InputNumber v-latin-digits v-model="form.headerDiscount" :min="0" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm text-slate-600">پورسانت (ریال)</label>
-          <InputNumber v-model="form.commissionAmount" :min="0" class="w-full" />
+          <InputNumber v-latin-digits v-model="form.commissionAmount" :min="0" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm text-slate-600">پورسانت (٪)</label>
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="form.commissionRatePercent"
             :min="0"
             :max="100"
@@ -412,7 +412,7 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="تعداد" style="width: 7rem">
           <template #body="{ data }">
-            <InputNumber v-model="data.quantity" :min="1" class="w-full" />
+            <InputNumber v-latin-digits v-model="data.quantity" :min="1" class="w-full" />
           </template>
         </Column>
         <Column header="واحد" style="width: 8rem">
@@ -429,7 +429,7 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="قیمت واحد" style="width: 10rem">
           <template #body="{ data }">
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="data.unitPrice"
               :min="0"
               :disabled="isFixedPrice(data)"
@@ -445,7 +445,7 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="مالیات ٪" style="width: 7rem">
           <template #body="{ data }">
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="data.vatRatePercent"
               :min="0"
               :max="100"
@@ -456,7 +456,7 @@ async function confirmSave(): Promise<void> {
         </Column>
         <Column header="تخفیف ردیف" style="width: 9rem">
           <template #body="{ data }">
-            <InputNumber v-model="data.discountAmount" :min="0" class="w-full" />
+            <InputNumber v-latin-digits v-model="data.discountAmount" :min="0" class="w-full" />
           </template>
         </Column>
         <Column header="" style="width: 3rem">

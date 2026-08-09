@@ -175,7 +175,7 @@ async function save(): Promise<void> {
     <div class="grid md:grid-cols-2 gap-4">
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">تاریخ شمسی (YYYY/MM/DD)</label>
-        <InputText v-model="form.dateJalali" placeholder="1403/05/15" class="w-full" />
+        <InputText v-latin-digits v-model="form.dateJalali" placeholder="1403/05/15" class="w-full" />
       </div>
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">شرح سند</label>
@@ -219,7 +219,7 @@ async function save(): Promise<void> {
         <div class="grid grid-cols-2 gap-2">
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--hy-muted)]">بدهکار</label>
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="line.debit"
               :min="0"
               locale="fa-IR"
@@ -229,7 +229,7 @@ async function save(): Promise<void> {
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--hy-muted)]">بستانکار</label>
-            <InputNumber
+            <InputNumber v-latin-digits
               v-model="line.credit"
               :min="0"
               locale="fa-IR"
@@ -272,7 +272,7 @@ async function save(): Promise<void> {
       </Column>
       <Column header="بدهکار" style="width: 10rem">
         <template #body="{ data }">
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="data.debit"
             :min="0"
             locale="fa-IR"
@@ -283,7 +283,7 @@ async function save(): Promise<void> {
       </Column>
       <Column header="بستانکار" style="width: 10rem">
         <template #body="{ data }">
-          <InputNumber
+          <InputNumber v-latin-digits
             v-model="data.credit"
             :min="0"
             locale="fa-IR"

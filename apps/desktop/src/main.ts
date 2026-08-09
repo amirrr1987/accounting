@@ -8,10 +8,12 @@ import { router } from "./router";
 import "./styles.css";
 import { faIR } from "./locale/fa-IR";
 import { initThemeEarly } from "./composables/useTheme";
+import { installLatinDigits } from "./directives/latinDigits";
 
 initThemeEarly();
 
 const app = createApp(App);
+installLatinDigits(app);
 
 app.use(router);
 app.use(PrimeVue, {

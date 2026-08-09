@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toAsciiDigits } from "./digits";
 
 /** واحد نمایش/ورود — مبالغ در DB همیشه به ریال ذخیره می‌شوند */
 export const DisplayUnitSchema = z.enum([
@@ -88,13 +89,9 @@ export function formatMoneyWithUnit(
   return `${formatMoneyRial(amountRial, displayUnit)} ${DISPLAY_UNIT_LABELS[displayUnit]}`;
 }
 
-const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
-
 /** ارقام فارسی/انگلیسی → رشته عدد صحیح */
 export function normalizeMoneyDigits(raw: string): string {
-  const normalized = raw
-    .replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)))
-    .replace(/[^\d]/g, "");
+  const normalized = toAsciiDigits(raw).replace(/[^\d]/g, "");
   if (normalized === "") return "0";
   return normalized.replace(/^0+(?=\d)/, "");
 }

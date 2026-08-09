@@ -179,7 +179,7 @@ async function save(): Promise<void> {
           option-value="value"
           placeholder="واحد پایه"
         />
-        <InputNumber
+        <InputNumber v-latin-digits
           v-model="form.conversionFactor"
           :min="0.0001"
           :max-fraction-digits="4"
