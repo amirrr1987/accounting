@@ -24,8 +24,8 @@ export function formatMoneyFaUnit(
 }
 
 /** حذف جداکننده و تبدیل ارقام فارسی؛ خروجی ریال برای API */
-export function parseMoneyInput(raw: string): string {
-  return parseMoneyInputForDisplay(raw);
+export function parseMoneyInput(raw: string | number): string {
+  return parseMoneyInputForDisplay(String(raw));
 }
 
 /** فقط نرمال‌سازی ارقام (بدون ضرب واحد) */

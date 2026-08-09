@@ -22,7 +22,12 @@ const parts = computed(() => {
 });
 
 const dayOptions = computed(() => {
-  const max = parts.value.m <= 6 ? 31 : parts.value.m <= 11 ? 30 : 29;
+  const { y, m } = parts.value;
+  let max = m <= 6 ? 31 : m <= 11 ? 30 : 29;
+  // سال کبیسه: اسفند ۳۰ روز دارد
+  if (m === 12 && isValidJalaliDateString(`${y}/12/30`)) {
+    max = 30;
+  }
   return Array.from({ length: max }, (_, i) => i + 1);
 });
 

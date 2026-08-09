@@ -42,11 +42,16 @@ import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import HyDoughnutChart from "@/components/charts/HyDoughnutChart.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
+import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { CHART_COLORS } from "@/lib/chart-theme";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
 
 const toast = useToast();
+const confirm = useConfirm();
+const { inputLabel } = useMoneyDisplay();
 const { copy: pageCopy, isMobile } = usePageCopy("partners");
 
 const partnerTabIndex = ref(0);
@@ -228,14 +233,31 @@ async function save(): Promise<void> {
 }
 
 async function deactivate(row: Partner): Promise<void> {
-  try {
-    await deactivatePartner(row.id);
-    await load();
-    await loadBalances();
-    toast.add({ severity: "success", summary: "غیرفعال شد", life: 3000 });
-  } catch {
-    toast.add({ severity: "error", summary: "خطا", detail: "عملیات ناموفق", life: 4000 });
-  }
+  confirm.require({
+    message: `آیا از غیرفعال‌سازی «${row.name}» مطمئن هستید؟`,
+    header: "تأیید غیرفعال‌سازی",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "غیرفعال",
+    rejectLabel: "انصراف",
+    acceptClass: "p-button-danger",
+    accept: () => {
+      void (async () => {
+        try {
+          await deactivatePartner(row.id);
+          await load();
+          await loadBalances();
+          toast.add({ severity: "success", summary: "غیرفعال شد", life: 3000 });
+        } catch {
+          toast.add({
+            severity: "error",
+            summary: "خطا",
+            detail: "عملیات ناموفق",
+            life: 4000,
+          });
+        }
+      })();
+    },
+  });
 }
 
 async function saveDrawing(): Promise<void> {
@@ -245,7 +267,7 @@ async function saveDrawing(): Promise<void> {
     const payload: CreatePartnerDrawingInput = {
       partnerId: drawingForm.partnerId,
       dateJalali: drawingForm.dateJalali,
-      amount: parseMoneyInput(drawingForm.amount),
+      amount: parseMoneyInput(String(drawingForm.amount)),
       description: drawingForm.description,
       payFrom: drawingForm.payFrom,
       cashAccountId:
@@ -272,6 +294,7 @@ async function saveDrawing(): Promise<void> {
 
 <template>
   <Toast />
+  <ConfirmDialog />
   <div
     :class="isMobile ? 'hy-page-mobile space-y-4 p-4' : 'hy-page flex flex-col gap-4 p-4 md:p-6'"
     dir="rtl"
@@ -520,7 +543,7 @@ async function saveDrawing(): Promise<void> {
           <JalaliDatePicker v-model="drawingForm.dateJalali" />
         </div>
         <div class="flex flex-col gap-1">
-          <label>مبلغ (ریال)</label>
+          <label>مبلغ ({{ inputLabel }})</label>
           <InputNumber v-latin-digits v-model="drawingForm.amount" :min="0" locale="fa-IR" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">

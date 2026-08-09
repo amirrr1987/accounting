@@ -20,6 +20,7 @@ export class BusinessSettingsService {
 
   async update(raw: UpdateBusinessSettingsInput): Promise<BusinessSettings> {
     const input = UpdateBusinessSettingsSchema.parse(raw);
+    await this.ensureRow();
     const row = await this.prisma.businessSettings.update({
       where: { id: SETTINGS_ID },
       data: {

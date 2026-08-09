@@ -10,6 +10,8 @@ import Select from "primevue/select";
 import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
 import type { CreateProductInput, Product, ProductPricingMode, UnitOfMeasure } from "@hesabyar/shared";
 import { PRODUCT_PRICING_MODE_LABELS } from "@hesabyar/shared";
 import {
@@ -27,6 +29,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
+const confirm = useConfirm();
 const { copy: pageCopy, isMobile } = usePageCopy("products");
 const products = ref<Product[]>([]);
 const units = ref<UnitOfMeasure[]>([]);
@@ -146,29 +149,42 @@ async function save(): Promise<void> {
 }
 
 async function deactivate(row: Product): Promise<void> {
-  try {
-    await deleteProduct(row.id);
-    toast.add({
-      severity: "success",
-      summary: "غیرفعال شد",
-      detail: row.name,
-      life: 2500,
-    });
-    await load();
-  } catch {
-    toast.add({
-      severity: "error",
-      summary: "خطا",
-      detail: "غیرفعال‌سازی ناموفق بود",
-      life: 4000,
-    });
-  }
+  confirm.require({
+    message: `آیا از غیرفعال‌سازی «${row.name}» مطمئن هستید؟`,
+    header: "تأیید غیرفعال‌سازی",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "غیرفعال",
+    rejectLabel: "انصراف",
+    acceptClass: "p-button-danger",
+    accept: () => {
+      void (async () => {
+        try {
+          await deleteProduct(row.id);
+          toast.add({
+            severity: "success",
+            summary: "غیرفعال شد",
+            detail: row.name,
+            life: 2500,
+          });
+          await load();
+        } catch {
+          toast.add({
+            severity: "error",
+            summary: "خطا",
+            detail: "غیرفعال‌سازی ناموفق بود",
+            life: 4000,
+          });
+        }
+      })();
+    },
+  });
 }
 </script>
 
 <template>
   <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
+    <ConfirmDialog />
 
     <PageHeader
       :title="pageCopy.title"
@@ -296,7 +312,17 @@ async function deactivate(row: Product): Promise<void> {
         <label class="text-sm text-[var(--hy-muted)]">{{ ux.products.costPrice }} (ریال)</label>
         <InputNumber v-latin-digits v-model="form.costPrice" :min="0" :use-grouping="true" class="w-full" />
         <label class="text-sm text-[var(--hy-muted)]">{{ ux.products.stockQty }}</label>
-        <InputNumber v-latin-digits v-model="form.stockQty" :min="0" class="w-full" />
+        <InputNumber
+          v-latin-digits
+          v-model="form.stockQty"
+          :min="0"
+          class="w-full"
+          :disabled="Boolean(editing)"
+          :placeholder="editing ? 'فقط از فاکتور/تعدیل وزن' : undefined"
+        />
+        <small v-if="editing" class="text-[var(--hy-muted)]">
+          موجودی در ویرایش تغییر نمی‌کند؛ از فاکتور یا تعدیل وزن استفاده کنید.
+        </small>
         <label class="text-sm text-[var(--hy-muted)]">نرخ مالیات (٪)</label>
         <InputNumber v-latin-digits
           v-model="form.vatRatePercent"

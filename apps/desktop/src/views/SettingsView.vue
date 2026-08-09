@@ -322,12 +322,31 @@ async function saveUser(): Promise<void> {
 }
 
 async function toggleUserActive(row: UserRecord): Promise<void> {
-  try {
-    await updateUser(row.id, { isActive: !row.isActive });
-    await loadUsers();
-  } catch {
-    toast.add({ severity: "error", summary: ux.settings.userError, life: 4000 });
-  }
+  const nextActive = !row.isActive;
+  confirm.require({
+    message: nextActive
+      ? `آیا «${row.username}» فعال شود؟`
+      : `آیا «${row.username}» غیرفعال شود؟`,
+    header: "تأیید تغییر وضعیت کاربر",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "تأیید",
+    rejectLabel: "انصراف",
+    acceptClass: nextActive ? "p-button-success" : "p-button-danger",
+    accept: () => {
+      void (async () => {
+        try {
+          await updateUser(row.id, { isActive: nextActive });
+          await loadUsers();
+        } catch {
+          toast.add({
+            severity: "error",
+            summary: ux.settings.userError,
+            life: 4000,
+          });
+        }
+      })();
+    },
+  });
 }
 
 async function onExportBackup(): Promise<void> {

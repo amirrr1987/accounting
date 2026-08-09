@@ -14,7 +14,15 @@ import { RolesGuard } from "./roles.guard";
     AuditModule,
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET ?? "hesabyar-dev-secret-change-me",
+      secret:
+        process.env.JWT_SECRET ??
+        (process.env.NODE_ENV === "production"
+          ? (() => {
+              throw new Error(
+                "JWT_SECRET must be set in production",
+              );
+            })()
+          : "hesabyar-dev-secret-change-me"),
       signOptions: { expiresIn: "7d" },
     }),
   ],

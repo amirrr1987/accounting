@@ -33,6 +33,12 @@ describe("assertFiscalDateWritable", () => {
       assertFiscalDateWritable("1403/07/01", { ...fy, isClosed: true }),
     ).toThrow(/بسته است/);
   });
+
+  it("blocks writes when no active fiscal year", () => {
+    expect(() => assertFiscalDateWritable("1403/07/01", null)).toThrow(
+      /سال مالی فعال/,
+    );
+  });
 });
 
 describe("weightedAverageCost", () => {

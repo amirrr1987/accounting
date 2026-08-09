@@ -11,12 +11,14 @@ import type { CheckKind, CreateCheckInput, Party } from "@hesabyar/shared";
 import { CHECK_KIND_LABELS, todayJalali } from "@hesabyar/shared";
 import { createCheck, fetchParties } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { useIsMobileRef } from "@/composables/useViewport";
 import CheckFormMobile from "@/views/check/CheckFormMobile.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 
 const isMobile = useIsMobileRef();
+const { inputLabel } = useMoneyDisplay();
 
 const router = useRouter();
 const toast = useToast();
@@ -52,13 +54,13 @@ const parties = computed(() =>
 
 const canSave = computed(
   () =>
-    form.partyId &&
-    form.amount &&
-    form.amount > 0 &&
+    Boolean(form.partyId) &&
+    Boolean(form.amount && form.amount > 0) &&
     /^\d{16}$/.test(form.sayyadNumber) &&
     /^\d{10}$/.test(form.drawerNationalId) &&
     /^09\d{9}$/.test(form.drawerMobile) &&
-    form.bankName.trim(),
+    form.bankName.trim().length > 0 &&
+    form.dueJalali >= form.issueJalali,
 );
 
 async function load(): Promise<void> {
@@ -176,7 +178,7 @@ onMounted(() => {
         <InputText v-latin-digits v-model="form.branchCode" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-sm text-[var(--hy-muted)]">مبلغ (ریال)</label>
+        <label class="text-sm text-[var(--hy-muted)]">مبلغ ({{ inputLabel }})</label>
         <InputNumber v-latin-digits v-model="form.amount" locale="fa-IR" :min="0" class="w-full" />
       </div>
       <div class="flex flex-col gap-1">

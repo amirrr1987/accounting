@@ -203,9 +203,10 @@ export class PartnerService {
           this.accountBalance(partner.coaDrawingAccountId, "DEBIT"),
         ]);
 
-        const share = partner.sharePercent / 100;
-        const equityShare = BigInt(Math.round(Number(netEquity) * share));
-        const profitShare = BigInt(Math.round(Number(netProfit) * share));
+        const equityShare =
+          (netEquity * BigInt(Math.round(partner.sharePercent * 100))) / 10000n;
+        const profitShare =
+          (netProfit * BigInt(Math.round(partner.sharePercent * 100))) / 10000n;
         const netBalance = equityShare + capitalBal - drawingBal;
 
         return {
@@ -249,9 +250,8 @@ export class PartnerService {
     const isShareValid = Math.abs(sharePercentTotal - 100) < 0.001;
 
     const slices = partners.map((partner) => {
-      const amount = BigInt(
-        Math.round((Number(netEquity) * partner.sharePercent) / 100),
-      );
+      const amount =
+        (netEquity * BigInt(Math.round(partner.sharePercent * 100))) / 10000n;
       return {
         partnerId: partner.id,
         partnerName: partner.name,
@@ -362,6 +362,7 @@ export class PartnerService {
     const [
       cash,
       bank,
+      receivable,
       inventory,
       checksRecv,
       payable,
@@ -369,6 +370,7 @@ export class PartnerService {
     ] = await Promise.all([
       this.accountBalanceByCode(PAYMENT_POSTING_CODES.cash, "DEBIT"),
       this.totalBankBalance(),
+      this.accountBalanceByCode(INVOICE_POSTING_CODES.receivable, "DEBIT"),
       this.accountBalanceByCode(INVOICE_POSTING_CODES.inventory, "DEBIT"),
       this.sumAccountBalances(
         [
@@ -384,7 +386,7 @@ export class PartnerService {
       ),
     ]);
 
-    const totalAssets = cash + bank + inventory + checksRecv;
+    const totalAssets = cash + bank + receivable + inventory + checksRecv;
     const totalLiabilities = payable + checksPay;
     const netEquity = totalAssets - totalLiabilities;
 

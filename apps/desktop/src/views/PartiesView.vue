@@ -9,6 +9,8 @@ import Select from "primevue/select";
 import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
 import type { CreatePartyInput, Party, PartyKind } from "@hesabyar/shared";
 import {
   createParty,
@@ -23,6 +25,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
 
 const toast = useToast();
+const confirm = useConfirm();
 const { copy: pageCopy, isMobile } = usePageCopy("parties");
 const parties = ref<Party[]>([]);
 const loading = ref(false);
@@ -116,29 +119,42 @@ async function save(): Promise<void> {
 }
 
 async function deactivate(row: Party): Promise<void> {
-  try {
-    await deleteParty(row.id);
-    toast.add({
-      severity: "success",
-      summary: "غیرفعال شد",
-      detail: row.name,
-      life: 2500,
-    });
-    await load();
-  } catch {
-    toast.add({
-      severity: "error",
-      summary: "خطا",
-      detail: "غیرفعال‌سازی ناموفق بود",
-      life: 4000,
-    });
-  }
+  confirm.require({
+    message: `آیا از غیرفعال‌سازی «${row.name}» مطمئن هستید؟`,
+    header: "تأیید غیرفعال‌سازی",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "غیرفعال",
+    rejectLabel: "انصراف",
+    acceptClass: "p-button-danger",
+    accept: () => {
+      void (async () => {
+        try {
+          await deleteParty(row.id);
+          toast.add({
+            severity: "success",
+            summary: "غیرفعال شد",
+            detail: row.name,
+            life: 2500,
+          });
+          await load();
+        } catch {
+          toast.add({
+            severity: "error",
+            summary: "خطا",
+            detail: "غیرفعال‌سازی ناموفق بود",
+            life: 4000,
+          });
+        }
+      })();
+    },
+  });
 }
 </script>
 
 <template>
   <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
+    <ConfirmDialog />
 
     <PageHeader
       :title="pageCopy.title"

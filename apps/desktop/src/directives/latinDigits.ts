@@ -67,15 +67,16 @@ function setFlag(
 function bindHost(
   el: HTMLElement,
   binding: DirectiveBinding<LatinDigitsBinding>,
+  convert = true,
 ): void {
   const apply = (): void => {
     const input = resolveEditable(el);
     if (!input) return;
     setFlag(input, binding);
-    applyAsciiDigits(input);
+    if (convert) applyAsciiDigits(input);
   };
   apply();
-  void nextTick(apply);
+  if (convert) void nextTick(apply);
 }
 
 function onCaptureInput(event: Event): void {
@@ -99,10 +100,11 @@ export const latinDigitsDirective: Directive<
   LatinDigitsBinding
 > = {
   mounted(el, binding) {
-    bindHost(el, binding);
+    bindHost(el, binding, true);
   },
   updated(el, binding) {
-    bindHost(el, binding);
+    // فقط فلگ — تبدیل روی capture input است تا با InputNumber(fa-IR) نجنگد
+    bindHost(el, binding, false);
   },
   unmounted(el) {
     const input = resolveEditable(el);

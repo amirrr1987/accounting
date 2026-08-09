@@ -226,31 +226,41 @@ export class CheckService {
     const issueDate = jalaliToGregorianDate(params.check.issueJalali);
     const dueDate = jalaliToGregorianDate(params.check.dueJalali);
 
-    await tx.check.create({
-      data: {
-        kind: params.kind,
-        sayyadNumber: params.check.sayyadNumber,
-        issueDate,
-        dueDate,
-        amount: params.amount,
-        partyId: params.partyId,
-        drawerNationalId: params.check.drawerNationalId,
-        drawerMobile: params.check.drawerMobile,
-        bankName: params.check.bankName,
-        branchCode: params.check.branchCode ?? null,
-        accountNumber: params.check.accountNumber ?? null,
-        status: "IN_PORTFOLIO",
-        receiptVoucherId: params.voucherId,
-        events: {
-          create: {
-            status: "IN_PORTFOLIO",
-            date: params.voucherDate,
-            note: "ثبت از دریافت/پرداخت",
-            voucherId: params.voucherId,
+    try {
+      await tx.check.create({
+        data: {
+          kind: params.kind,
+          sayyadNumber: params.check.sayyadNumber,
+          issueDate,
+          dueDate,
+          amount: params.amount,
+          partyId: params.partyId,
+          drawerNationalId: params.check.drawerNationalId,
+          drawerMobile: params.check.drawerMobile,
+          bankName: params.check.bankName,
+          branchCode: params.check.branchCode ?? null,
+          accountNumber: params.check.accountNumber ?? null,
+          status: "IN_PORTFOLIO",
+          receiptVoucherId: params.voucherId,
+          events: {
+            create: {
+              status: "IN_PORTFOLIO",
+              date: params.voucherDate,
+              note: "ثبت از دریافت/پرداخت",
+              voucherId: params.voucherId,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new BadRequestException("شماره صیاد تکراری است");
+      }
+      throw e;
+    }
   }
 
   async updateStatus(id: string, raw: UpdateCheckStatusInput): Promise<Check> {
@@ -273,7 +283,7 @@ export class CheckService {
       );
     }
 
-    const needsBank = ["DEPOSITED", "CLEARED", "PAID"].includes(input.status);
+    const needsBank = ["CLEARED", "PAID"].includes(input.status);
     if (needsBank && !input.bankAccountId) {
       throw new BadRequestException("حساب بانکی برای این عملیات الزامی است");
     }
@@ -288,28 +298,38 @@ export class CheckService {
       `تغییر وضعیت به ${CHECK_STATUS_LABELS[input.status]}`;
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.check.updateMany({
+        where: { id, status: check.status },
+        data: {
+          status: input.status,
+          bankAccountId: bankAccount?.id ?? check.bankAccountId,
+        },
+      });
+      if (locked.count !== 1) {
+        throw new BadRequestException("وضعیت چک همزمان تغییر کرده است");
+      }
+
       const voucher = await this.createStatusVoucher(tx, {
         check,
         status: input.status,
         date,
         description: note,
         bankCoaAccountId: bankAccount?.coaAccountId,
+        bankAccountId: bankAccount?.id ?? check.bankAccountId,
       });
 
-      return tx.check.update({
-        where: { id },
+      await tx.checkEvent.create({
         data: {
+          checkId: id,
           status: input.status,
-          bankAccountId: bankAccount?.id ?? check.bankAccountId,
-          events: {
-            create: {
-              status: input.status,
-              date,
-              note,
-              voucherId: voucher.id,
-            },
-          },
+          date,
+          note,
+          voucherId: voucher.id,
         },
+      });
+
+      return tx.check.findUniqueOrThrow({
+        where: { id },
         include: this.include,
       });
     });
@@ -411,6 +431,7 @@ export class CheckService {
       date: Date;
       description: string;
       bankCoaAccountId?: string;
+      bankAccountId?: string | null;
     },
   ) {
     const amount = params.check.amount;
@@ -591,7 +612,7 @@ export class CheckService {
         kind: "GENERAL",
         date: params.date,
         description: params.description,
-        bankAccountId: params.check.bankAccountId,
+        bankAccountId: params.bankAccountId ?? params.check.bankAccountId,
         lines: { create: lines },
       },
     });

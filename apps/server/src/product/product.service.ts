@@ -74,7 +74,7 @@ export class ProductService {
           name: input.name,
           unitPrice: input.unitPrice,
           costPrice: input.costPrice ?? 0n,
-          stockQty: input.stockQty ?? 0,
+          // موجودی فقط از فاکتور/تعدیل وزن تغییر می‌کند — نه از ویرایش کالا
           vatRate: input.vatRate,
           pricingMode: input.pricingMode ?? "AT_INVOICE",
           defaultUnitId: input.defaultUnitId ?? null,

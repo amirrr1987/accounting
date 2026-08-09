@@ -47,10 +47,12 @@ import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
+import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
+const { inputLabel } = useMoneyDisplay();
 const { copy: pageCopy, isMobile } = usePageCopy("expenses");
 
 const expenseTabIndex = ref(0);
@@ -204,7 +206,7 @@ async function saveExpense(): Promise<void> {
     const payload: CreateExpenseInput = {
       categoryId: expenseForm.categoryId,
       dateJalali: expenseForm.dateJalali,
-      amount: parseMoneyInput(expenseForm.amount),
+      amount: parseMoneyInput(String(expenseForm.amount)),
       description: expenseForm.description,
       payFrom: expenseForm.payFrom,
       cashAccountId:
@@ -246,7 +248,7 @@ async function saveDrawing(): Promise<void> {
     const payload: CreateOwnerDrawingInput = {
       ownerId: drawingForm.ownerId,
       dateJalali: drawingForm.dateJalali,
-      amount: parseMoneyInput(drawingForm.amount),
+      amount: parseMoneyInput(String(drawingForm.amount)),
       description: drawingForm.description,
       payFrom: drawingForm.payFrom,
       cashAccountId:
@@ -548,7 +550,7 @@ async function saveOwner(): Promise<void> {
           <JalaliDatePicker v-model="expenseForm.dateJalali" />
         </div>
         <div class="flex flex-col gap-1">
-          <label>مبلغ (ریال)</label>
+          <label>مبلغ ({{ inputLabel }})</label>
           <InputNumber v-latin-digits
             v-model="expenseForm.amount"
             :min="0"
@@ -633,7 +635,7 @@ async function saveOwner(): Promise<void> {
           <JalaliDatePicker v-model="drawingForm.dateJalali" />
         </div>
         <div class="flex flex-col gap-1">
-          <label>مبلغ (ریال)</label>
+          <label>مبلغ ({{ inputLabel }})</label>
           <InputNumber v-latin-digits
             v-model="drawingForm.amount"
             :min="0"

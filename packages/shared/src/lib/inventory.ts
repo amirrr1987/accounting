@@ -13,7 +13,9 @@ export function assertFiscalDateWritable(
   dateJalali: string,
   fiscal: FiscalLockContext | null,
 ): void {
-  if (!fiscal) return;
+  if (!fiscal) {
+    throw new Error("سال مالی فعال تعریف نشده است");
+  }
 
   if (fiscal.isClosed) {
     throw new Error(`سال مالی ${fiscal.title} بسته است و ثبت مجاز نیست`);
@@ -48,8 +50,8 @@ export function weightedAverageCost(
   const newQty = oldQty + addQty;
   if (newQty <= 0) return 0n;
   const total =
-    oldQty * Number(oldCost) + addQty * Number(addUnitPrice);
-  return BigInt(Math.round(total / newQty));
+    oldCost * BigInt(oldQty) + addUnitPrice * BigInt(addQty);
+  return total / BigInt(newQty);
 }
 
 /** COGS یک ردیف فروش */

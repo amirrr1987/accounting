@@ -8,6 +8,8 @@ import InputText from "primevue/inputtext";
 import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
 import type { BankAccount, CreateBankAccountInput } from "@hesabyar/shared";
 import {
   createBankAccount,
@@ -21,6 +23,7 @@ import { formatMoneyFa } from "@/lib/money";
 import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
+const confirm = useConfirm();
 const { copy: pageCopy, isMobile } = usePageCopy("bankAccounts");
 const rows = ref<BankAccount[]>([]);
 const loading = ref(false);
@@ -94,23 +97,42 @@ async function save(): Promise<void> {
 }
 
 async function deactivate(row: BankAccount): Promise<void> {
-  try {
-    await deactivateBankAccount(row.id);
-    await load();
-  } catch {
-    toast.add({
-      severity: "error",
-      summary: "خطا",
-      detail: "غیرفعال‌سازی ناموفق بود",
-      life: 4000,
-    });
-  }
+  confirm.require({
+    message: `آیا از غیرفعال‌سازی «${row.name}» مطمئن هستید؟`,
+    header: "تأیید غیرفعال‌سازی",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "غیرفعال",
+    rejectLabel: "انصراف",
+    acceptClass: "p-button-danger",
+    accept: () => {
+      void (async () => {
+        try {
+          await deactivateBankAccount(row.id);
+          await load();
+          toast.add({
+            severity: "success",
+            summary: "غیرفعال شد",
+            detail: row.name,
+            life: 2500,
+          });
+        } catch {
+          toast.add({
+            severity: "error",
+            summary: "خطا",
+            detail: "غیرفعال‌سازی ناموفق بود",
+            life: 4000,
+          });
+        }
+      })();
+    },
+  });
 }
 </script>
 
 <template>
   <div :class="isMobile ? 'hy-page-mobile space-y-4' : 'hy-page'" dir="rtl">
     <Toast />
+    <ConfirmDialog />
     <PageHeader
       :title="pageCopy.title"
       :subtitle="pageCopy.subtitle"

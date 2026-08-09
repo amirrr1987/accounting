@@ -155,7 +155,8 @@ export class InvoiceService {
       where: { id },
       include: {
         voucher: { include: { lines: true } },
-        lines: { include: { product: true } },
+        lines: { include: { product: true, unit: true } },
+        returns: { where: { deletedAt: null }, select: { id: true } },
       },
     });
     if (!row) {
@@ -167,6 +168,11 @@ export class InvoiceService {
     if (row.kind === "SALE_RETURN" || row.kind === "PURCHASE_RETURN") {
       throw new BadRequestException(
         "مرجوعی را نمی‌توان با حذف نرم ابطال کرد",
+      );
+    }
+    if (row.returns.length > 0) {
+      throw new BadRequestException(
+        "فاکتور دارای مرجوعی است؛ ابتدا مرجوعی‌ها را ابطال کنید",
       );
     }
     if (!row.voucher) {
@@ -188,24 +194,36 @@ export class InvoiceService {
       }));
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.invoice.updateMany({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (locked.count !== 1) {
+        throw new BadRequestException("فاکتور قبلاً حذف شده است");
+      }
+
       for (const line of row.lines) {
+        const baseQty = toBaseQuantity(
+          line.quantity,
+          line.unit?.conversionFactor ?? 1,
+        );
         if (row.kind === "SALE") {
           await tx.product.update({
             where: { id: line.productId },
-            data: { stockQty: { increment: line.quantity } },
+            data: { stockQty: { increment: baseQty } },
           });
         } else if (row.kind === "PURCHASE") {
           const product = await tx.product.findUniqueOrThrow({
             where: { id: line.productId },
           });
-          if (product.stockQty < line.quantity) {
+          if (product.stockQty < baseQty) {
             throw new BadRequestException(
               `برگشت خرید: موجودی ${product.name} کافی نیست`,
             );
           }
           await tx.product.update({
             where: { id: line.productId },
-            data: { stockQty: { decrement: line.quantity } },
+            data: { stockQty: { decrement: baseQty } },
           });
         }
       }
@@ -227,9 +245,8 @@ export class InvoiceService {
         },
       });
 
-      return tx.invoice.update({
+      return tx.invoice.findUniqueOrThrow({
         where: { id },
-        data: { deletedAt: new Date() },
         include: this.include,
       });
     });

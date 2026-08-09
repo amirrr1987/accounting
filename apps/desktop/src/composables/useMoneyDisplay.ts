@@ -36,8 +36,8 @@ export function useMoneyDisplay() {
     return formatMoneyWithUnit(value, displayUnit.value);
   }
 
-  function parseMoneyInput(raw: string): string {
-    return parseDisplayInputToRial(raw, inputUnit.value);
+  function parseMoneyInput(raw: string | number): string {
+    return parseDisplayInputToRial(String(raw), inputUnit.value);
   }
 
   return {
@@ -68,6 +68,6 @@ export function formatMoneyForDisplay(value: string | number | bigint): string {
   return formatMoneyRial(value, displayUnit.value);
 }
 
-export function parseMoneyInputForDisplay(raw: string): string {
-  return parseDisplayInputToRial(raw, inputUnit.value);
+export function parseMoneyInputForDisplay(raw: string | number): string {
+  return parseDisplayInputToRial(String(raw), inputUnit.value);
 }

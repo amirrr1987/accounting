@@ -26,7 +26,6 @@ import {
   previewInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
-import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
 import MobileStepWizard from "@/components/MobileStepWizard.vue";
@@ -48,7 +47,6 @@ const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const { copy: pageCopy } = usePageCopy("invoices");
-const { inputLabel } = useMoneyDisplay();
 
 const parties = ref<Party[]>([]);
 const products = ref<Product[]>([]);
@@ -410,7 +408,7 @@ onMounted(async () => {
             </div>
             <div>
               <label class="text-xs text-[var(--hy-muted)]">
-                قیمت ({{ inputLabel }})
+                قیمت (ریال)
               </label>
               <InputNumber v-latin-digits
                 v-model="line.unitPrice"

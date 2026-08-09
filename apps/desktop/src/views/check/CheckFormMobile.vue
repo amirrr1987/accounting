@@ -11,7 +11,7 @@ import { useToast } from "primevue/usetoast";
 import type { CheckKind, CreateCheckInput, Party } from "@hesabyar/shared";
 import { todayJalali } from "@hesabyar/shared";
 import { createCheck, fetchParties } from "@/lib/api";
-import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
+import { parseMoneyInput } from "@/lib/money";
 import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -310,7 +310,7 @@ onMounted(async () => {
         </p>
         <p class="m-0 text-sm">
           <span class="text-[var(--hy-muted)]">{{ ux.checkWizard.summaryAmount }}:</span>
-          {{ formatMoneyFa(form.amount ?? 0) }}
+          {{ form.amount ?? 0 }} {{ inputLabel }}
         </p>
         <p class="m-0 text-sm">
           <span class="text-[var(--hy-muted)]">{{ ux.checkWizard.summaryDue }}:</span>
