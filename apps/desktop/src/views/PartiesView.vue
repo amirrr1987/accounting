@@ -89,6 +89,7 @@ async function save(): Promise<void> {
       name: form.name.trim(),
       phone: form.phone.trim() || null,
       nationalId: form.nationalId.trim() || null,
+      isActive: true,
     };
     if (editing.value) {
       await updateParty(editing.value.id, payload);

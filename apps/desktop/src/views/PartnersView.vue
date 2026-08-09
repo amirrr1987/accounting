@@ -44,7 +44,6 @@ import HyDoughnutChart from "@/components/charts/HyDoughnutChart.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
 import { CHART_COLORS } from "@/lib/chart-theme";
 import { usePageCopy } from "@/composables/usePageCopy";
-import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
 const { copy: pageCopy, isMobile } = usePageCopy("partners");
@@ -208,6 +207,7 @@ async function save(): Promise<void> {
         mobile: form.mobile.trim() || null,
         nationalId: form.nationalId.trim() || null,
         sharePercent: form.sharePercent,
+        isActive: true,
       };
       await createPartner(payload);
     }
@@ -245,7 +245,7 @@ async function saveDrawing(): Promise<void> {
     const payload: CreatePartnerDrawingInput = {
       partnerId: drawingForm.partnerId,
       dateJalali: drawingForm.dateJalali,
-      amount: parseMoneyInput(drawingForm.amount),
+      amount: BigInt(parseMoneyInput(String(drawingForm.amount))),
       description: drawingForm.description,
       payFrom: drawingForm.payFrom,
       cashAccountId:
@@ -308,7 +308,7 @@ async function saveDrawing(): Promise<void> {
     />
 
     <TabView v-if="!isMobile">
-      <TabPanel header="فهرست شرکا">
+      <TabPanel header="فهرست شرکا" value="partners">
         <DataTable :value="partners" :loading="loading" striped-rows paginator :rows="10">
           <Column field="name" header="نام" />
           <Column header="سهم">
@@ -349,7 +349,7 @@ async function saveDrawing(): Promise<void> {
         />
       </TabPanel>
 
-      <TabPanel header="تفکیک موجودی">
+      <TabPanel header="تفکیک موجودی" value="balances">
         <div class="flex flex-wrap gap-3 mb-4 items-end">
           <JalaliDatePicker v-model="balanceFrom" label="از" />
           <JalaliDatePicker v-model="balanceTo" label="تا" />
@@ -399,7 +399,7 @@ async function saveDrawing(): Promise<void> {
         </template>
       </TabPanel>
 
-      <TabPanel header="برداشت‌ها">
+      <TabPanel header="برداشت‌ها" value="drawings">
         <DataTable :value="drawings" striped-rows paginator :rows="10">
           <Column field="dateJalali" header="تاریخ" />
           <Column field="partnerName" header="شریک" />

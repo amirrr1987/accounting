@@ -48,7 +48,6 @@ import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
 import { usePageCopy } from "@/composables/usePageCopy";
-import { ux } from "@/locale/ux-copy";
 
 const toast = useToast();
 const { copy: pageCopy, isMobile } = usePageCopy("expenses");
@@ -204,7 +203,7 @@ async function saveExpense(): Promise<void> {
     const payload: CreateExpenseInput = {
       categoryId: expenseForm.categoryId,
       dateJalali: expenseForm.dateJalali,
-      amount: parseMoneyInput(expenseForm.amount),
+      amount: BigInt(parseMoneyInput(String(expenseForm.amount))),
       description: expenseForm.description,
       payFrom: expenseForm.payFrom,
       cashAccountId:
@@ -246,7 +245,7 @@ async function saveDrawing(): Promise<void> {
     const payload: CreateOwnerDrawingInput = {
       ownerId: drawingForm.ownerId,
       dateJalali: drawingForm.dateJalali,
-      amount: parseMoneyInput(drawingForm.amount),
+      amount: BigInt(parseMoneyInput(String(drawingForm.amount))),
       description: drawingForm.description,
       payFrom: drawingForm.payFrom,
       cashAccountId:
@@ -287,6 +286,7 @@ async function saveOwner(): Promise<void> {
       name: ownerForm.name.trim(),
       mobile: ownerForm.mobile.trim() || null,
       nationalId: ownerForm.nationalId.trim() || null,
+      isActive: true,
     };
     const created = await createOwner(payload);
     owners.value = [...owners.value, created];
@@ -332,7 +332,7 @@ async function saveOwner(): Promise<void> {
     />
 
     <TabView v-if="!isMobile">
-      <TabPanel header="هزینه‌ها">
+      <TabPanel header="هزینه‌ها" value="expenses">
         <div class="mb-4 flex justify-end">
           <Button
             label="هزینه جدید"
@@ -366,7 +366,7 @@ async function saveOwner(): Promise<void> {
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="برداشت شخصی">
+      <TabPanel header="برداشت شخصی" value="drawings">
         <div class="mb-4 flex flex-wrap gap-2 justify-end">
           <Button
             label="مالک جدید"
@@ -406,7 +406,7 @@ async function saveOwner(): Promise<void> {
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="خلاصه دوره">
+      <TabPanel header="خلاصه دوره" value="summary">
         <div class="mb-4 flex flex-wrap items-end gap-3">
           <div class="flex flex-col gap-1">
             <label class="text-sm text-surface-600">از تاریخ</label>

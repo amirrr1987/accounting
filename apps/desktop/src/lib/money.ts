@@ -1,7 +1,6 @@
 import {
   formatMoneyRial,
   normalizeMoneyDigits,
-  parseDisplayInputToRial,
 } from "@hesabyar/shared";
 import {
   formatMoneyForDisplay,

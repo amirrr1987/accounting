@@ -131,7 +131,7 @@ function confirmDelete(row: Invoice): void {
       >
         <Column field="number" header="شماره" />
         <Column header="نوع">
-          <template #body="{ data }">
+          <template #body="{ data }: { data: Invoice }">
             {{ INVOICE_KIND_LABELS[data.kind] }}
           </template>
         </Column>
