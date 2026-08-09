@@ -1,4 +1,4 @@
-import { computed, ref, watch } from "vue";
+import { ref } from "vue";
 
 const STORAGE_KEY = "hesabyar-onboarding-done";
 

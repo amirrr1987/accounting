@@ -71,6 +71,7 @@ async function save(): Promise<void> {
       bankName: form.bankName.trim(),
       accountNumber: form.accountNumber.trim() || null,
       sheba: form.sheba.trim() || null,
+      isActive: true,
     };
     await createBankAccount(payload);
     toast.add({
