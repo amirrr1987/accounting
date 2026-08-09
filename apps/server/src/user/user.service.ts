@@ -34,6 +34,7 @@ export class UserService {
         username: u.username,
         role: u.role,
         isActive: u.isActive,
+        mustChangePassword: u.mustChangePassword,
         createdAt: u.createdAt.toISOString(),
       })),
     );
@@ -54,6 +55,7 @@ export class UserService {
         passwordHash,
         role: input.role,
         isActive: true,
+        mustChangePassword: true,
       },
     });
     await this.audit.log({
@@ -69,6 +71,7 @@ export class UserService {
       username: created.username,
       role: created.role,
       isActive: created.isActive,
+      mustChangePassword: created.mustChangePassword,
       createdAt: created.createdAt.toISOString(),
     });
   }
@@ -87,11 +90,13 @@ export class UserService {
       role?: UserRole;
       isActive?: boolean;
       passwordHash?: string;
+      mustChangePassword?: boolean;
     } = {};
     if (input.role !== undefined) data.role = input.role;
     if (input.isActive !== undefined) data.isActive = input.isActive;
     if (input.password) {
       data.passwordHash = await bcrypt.hash(input.password, 10);
+      data.mustChangePassword = true;
     }
     const updated = await this.prisma.user.update({ where: { id }, data });
     await this.audit.log({
@@ -106,6 +111,7 @@ export class UserService {
       username: updated.username,
       role: updated.role,
       isActive: updated.isActive,
+      mustChangePassword: updated.mustChangePassword,
       createdAt: updated.createdAt.toISOString(),
     });
   }

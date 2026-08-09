@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -7,11 +8,14 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import {
+  ChangePasswordSchema,
   LOGIN_MAX_FAILURES,
   LoginResponseSchema,
   LoginSchema,
   LogoutResponseSchema,
   MeResponseSchema,
+  type ChangePasswordInput,
+  type ChangePasswordResponse,
   type LoginInput,
   type LoginResponse,
   type LoginRiskFlag,
@@ -91,74 +95,56 @@ export class AuthService {
     }
 
     const sessionId = this.loginEvents.newSessionId();
-    const clientType = client?.clientType ?? "UNKNOWN";
-    const fingerprint = this.loginEvents.deviceFingerprint(
-      clientType,
-      client?.platform,
-      request.userAgent,
-    );
-    const isNewDevice = await this.loginEvents.isNewDevice(
-      user.id,
-      fingerprint,
-    );
-    const priorActive = await this.loginEvents.countActiveSessions(user.id);
-    const recentFailures = await this.loginEvents.countRecentFailures(username);
-    const rapidAttempts = await this.loginEvents.countRecentAttempts(
-      username,
-      60_000,
-    );
+    return this.issueSession(user, sessionId, client, request, {
+      recordLoginEvent: true,
+      auditLogin: true,
+    });
+  }
 
-    const riskFlags: LoginRiskFlag[] = [];
-    if (recentFailures >= Math.max(1, LOGIN_MAX_FAILURES - 2)) {
-      riskFlags.push("MANY_FAILURES");
+  async changePassword(
+    userId: string,
+    sessionId: string | undefined,
+    raw: ChangePasswordInput,
+    request: RequestMeta,
+  ): Promise<ChangePasswordResponse> {
+    const input = ChangePasswordSchema.parse(raw);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException("کاربر یافت نشد");
     }
-    if (isNewDevice) riskFlags.push("NEW_DEVICE");
-    if (priorActive >= 1) riskFlags.push("CONCURRENT_SESSIONS");
-    if (rapidAttempts >= 3) riskFlags.push("RAPID_ATTEMPTS");
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      username: user.username,
-      role: user.role,
-      jti: sessionId,
-    };
-    const accessToken = await this.jwt.signAsync(payload);
-    const activeSessionCount = priorActive + 1;
+    const ok = await bcrypt.compare(input.currentPassword, user.passwordHash);
+    if (!ok) {
+      throw new BadRequestException("رمز فعلی نادرست است");
+    }
 
-    await this.loginEvents.record({
-      username: user.username,
-      userId: user.id,
-      success: true,
-      client,
-      request,
-      sessionId,
-      isNewDevice,
-      riskFlags,
-      activeSessionCount,
+    const passwordHash = await bcrypt.hash(input.newPassword, 10);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+      },
     });
 
-    const detailParts = [
-      "ورود موفق",
-      request.ip ? `IP:${request.ip}` : null,
-      clientType !== "UNKNOWN" ? clientType : null,
-      isNewDevice ? "دستگاه‌جدید" : null,
-    ].filter(Boolean);
+    if (sessionId) {
+      await this.loginEvents.markLogout(sessionId);
+    }
+    const newSessionId = this.loginEvents.newSessionId();
 
     await this.audit.log({
-      userId: user.id,
-      username: user.username,
-      action: "LOGIN",
+      userId: updated.id,
+      username: updated.username,
+      action: "UPDATE",
       entity: "auth",
-      entityId: sessionId,
-      detail: detailParts.join(" · "),
+      entityId: updated.id,
+      detail: "تغییر رمز عبور",
     });
 
-    return LoginResponseSchema.parse({
-      accessToken,
-      user: { id: user.id, username: user.username, role: user.role },
-      sessionId,
-      isNewDevice,
-      activeSessionCount,
+    return this.issueSession(updated, newSessionId, undefined, request, {
+      recordLoginEvent: true,
+      auditLogin: false,
+      priorActiveOverride: 0,
     });
   }
 
@@ -188,11 +174,114 @@ export class AuthService {
       id: user.id,
       username: user.username,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     });
   }
 
   isSessionActive(sessionId: string): Promise<boolean> {
     return this.loginEvents.isSessionActive(sessionId);
+  }
+
+  private async issueSession(
+    user: {
+      id: string;
+      username: string;
+      role: "ADMIN" | "ACCOUNTANT" | "VIEWER";
+      mustChangePassword: boolean;
+    },
+    sessionId: string,
+    client: LoginInput["client"] | undefined,
+    request: RequestMeta,
+    opts: {
+      recordLoginEvent: boolean;
+      auditLogin: boolean;
+      priorActiveOverride?: number;
+    },
+  ): Promise<LoginResponse> {
+    const clientType = client?.clientType ?? "UNKNOWN";
+    const fingerprint = this.loginEvents.deviceFingerprint(
+      clientType,
+      client?.platform,
+      request.userAgent,
+    );
+    const isNewDevice = await this.loginEvents.isNewDevice(
+      user.id,
+      fingerprint,
+    );
+    const priorActive =
+      opts.priorActiveOverride ??
+      (await this.loginEvents.countActiveSessions(user.id));
+    const recentFailures = await this.loginEvents.countRecentFailures(
+      user.username,
+    );
+    const rapidAttempts = await this.loginEvents.countRecentAttempts(
+      user.username,
+      60_000,
+    );
+
+    const riskFlags: LoginRiskFlag[] = [];
+    if (recentFailures >= Math.max(1, LOGIN_MAX_FAILURES - 2)) {
+      riskFlags.push("MANY_FAILURES");
+    }
+    if (isNewDevice) riskFlags.push("NEW_DEVICE");
+    if (priorActive >= 1) riskFlags.push("CONCURRENT_SESSIONS");
+    if (rapidAttempts >= 3) riskFlags.push("RAPID_ATTEMPTS");
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+      jti: sessionId,
+      mustChangePassword: user.mustChangePassword,
+    };
+    const accessToken = await this.jwt.signAsync(payload);
+    const activeSessionCount = priorActive + 1;
+
+    if (opts.recordLoginEvent) {
+      await this.loginEvents.record({
+        username: user.username,
+        userId: user.id,
+        success: true,
+        client,
+        request,
+        sessionId,
+        isNewDevice,
+        riskFlags,
+        activeSessionCount,
+      });
+    }
+
+    if (opts.auditLogin) {
+      const detailParts = [
+        "ورود موفق",
+        user.mustChangePassword ? "نیازبهتغییررمز" : null,
+        request.ip ? `IP:${request.ip}` : null,
+        clientType !== "UNKNOWN" ? clientType : null,
+        isNewDevice ? "دستگاه‌جدید" : null,
+      ].filter(Boolean);
+
+      await this.audit.log({
+        userId: user.id,
+        username: user.username,
+        action: "LOGIN",
+        entity: "auth",
+        entityId: sessionId,
+        detail: detailParts.join(" · "),
+      });
+    }
+
+    return LoginResponseSchema.parse({
+      accessToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        mustChangePassword: user.mustChangePassword,
+      },
+      sessionId,
+      isNewDevice,
+      activeSessionCount,
+    });
   }
 
   private async recordFailure(

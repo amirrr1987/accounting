@@ -29,7 +29,10 @@ useAppShortcuts();
 const drawerOpen = ref(false);
 
 const showChrome = computed(
-  () => isAuthenticated.value && route.name !== "login",
+  () =>
+    isAuthenticated.value &&
+    route.name !== "login" &&
+    route.name !== "change-password",
 );
 
 const badge = computed(() => {

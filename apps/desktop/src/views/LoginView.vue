@@ -79,6 +79,16 @@ async function submit(): Promise<void> {
     });
     const res = await login(body);
     setSession(res.accessToken, res.user, res.sessionId);
+    if (res.user.mustChangePassword) {
+      toast.add({
+        severity: "warn",
+        summary: ux.changePassword.title,
+        detail: ux.changePassword.subtitle(res.user.username),
+        life: 4000,
+      });
+      await router.replace("/change-password");
+      return;
+    }
     const detail = res.isNewDevice
       ? ux.auth.successNewDevice(res.user.username)
       : ux.auth.successDetail(res.user.username);

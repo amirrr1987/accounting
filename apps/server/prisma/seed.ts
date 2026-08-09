@@ -42,10 +42,11 @@ async function seedAdmin(): Promise<void> {
       passwordHash,
       role: "ADMIN",
       isActive: true,
+      mustChangePassword: true,
     },
   });
   console.log(
-    `Seeded default admin user: ${DEFAULT_ADMIN_USERNAME} / ${DEFAULT_ADMIN_PASSWORD}`,
+    `Seeded default admin user: ${DEFAULT_ADMIN_USERNAME} / ${DEFAULT_ADMIN_PASSWORD} (must change password on first login)`,
   );
 }
 

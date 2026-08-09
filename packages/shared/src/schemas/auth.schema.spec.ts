@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ChangePasswordSchema,
   DEFAULT_ADMIN_PASSWORD,
   DEFAULT_ADMIN_USERNAME,
   LoginSchema,
@@ -29,6 +30,27 @@ describe("LoginSchema", () => {
         password: "admin",
       }),
     ).toThrow();
+  });
+});
+
+describe("ChangePasswordSchema", () => {
+  it("rejects default admin as new password", () => {
+    expect(() =>
+      ChangePasswordSchema.parse({
+        currentPassword: "admin",
+        newPassword: "admin",
+        confirmPassword: "admin",
+      }),
+    ).toThrow();
+  });
+
+  it("accepts a strong enough new password", () => {
+    const parsed = ChangePasswordSchema.parse({
+      currentPassword: "admin",
+      newPassword: "Secret1",
+      confirmPassword: "Secret1",
+    });
+    expect(parsed.newPassword).toBe("Secret1");
   });
 });
 

@@ -10,6 +10,7 @@ import ProductsView from "@/views/ProductsView.vue";
 import InvoicesView from "@/views/InvoicesView.vue";
 import InvoiceFormView from "@/views/InvoiceFormView.vue";
 import LoginView from "@/views/LoginView.vue";
+import ChangePasswordView from "@/views/ChangePasswordView.vue";
 import InvoiceDetailView from "@/views/InvoiceDetailView.vue";
 import InvoiceReturnFormView from "@/views/InvoiceReturnFormView.vue";
 import UnitsView from "@/views/UnitsView.vue";
@@ -35,6 +36,12 @@ export const router = createRouter({
       name: "login",
       component: LoginView,
       meta: { public: true },
+    },
+    {
+      path: "/change-password",
+      name: "change-password",
+      component: ChangePasswordView,
+      meta: { passwordChange: true },
     },
     { path: "/", name: "home", component: HomeView },
     { path: "/accounts", name: "accounts", component: AccountsView },
@@ -75,12 +82,21 @@ router.beforeEach((to) => {
   const { isAuthenticated, user } = useAuth();
   if (to.meta.public) {
     if (isAuthenticated.value && to.name === "login") {
+      if (user.value?.mustChangePassword) {
+        return { name: "change-password" };
+      }
       return { name: "home" };
     }
     return true;
   }
   if (!isAuthenticated.value) {
     return { name: "login", query: { redirect: to.fullPath } };
+  }
+  if (user.value?.mustChangePassword && to.name !== "change-password") {
+    return { name: "change-password" };
+  }
+  if (!user.value?.mustChangePassword && to.name === "change-password") {
+    return { name: "home" };
   }
   if (to.meta.adminOnly && user.value && !isAdmin(user.value.role)) {
     return { name: "home" };

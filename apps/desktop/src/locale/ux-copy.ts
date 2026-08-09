@@ -29,7 +29,24 @@ export const ux = {
       "تعداد تلاش ناموفق زیاد است. ۱۵ دقیقه دیگر دوباره تلاش کنید.",
     requiredUsername: "نام کاربری را وارد کنید.",
     requiredPassword: "رمز عبور را وارد کنید.",
-    demoHint: "نصب تازه: نام کاربری و رمز پیش‌فرض admin است.",
+    demoHint:
+      "نصب تازه: admin / admin — پس از اولین ورود باید رمز را عوض کنید.",
+  },
+
+  changePassword: {
+    title: "تغییر رمز عبور الزامی",
+    subtitle: (name: string) =>
+      `${name} عزیز، برای امنیت حساب باید رمز پیش‌فرض را عوض کنید.`,
+    current: "رمز فعلی",
+    next: "رمز جدید",
+    confirm: "تکرار رمز جدید",
+    submit: "ثبت رمز جدید",
+    submitting: "در حال ذخیره…",
+    backToLogin: "بازگشت به ورود",
+    successTitle: "رمز به‌روز شد",
+    successDetail: "از این به بعد با رمز جدید وارد شوید.",
+    errorTitle: "تغییر رمز انجام نشد",
+    errorDetail: "رمز فعلی را بررسی کنید و دوباره تلاش کنید.",
   },
 
   health: {

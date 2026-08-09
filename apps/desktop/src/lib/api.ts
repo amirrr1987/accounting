@@ -13,6 +13,8 @@ import {
   LoginResponseSchema,
   LoginSchema,
   LogoutResponseSchema,
+  ChangePasswordSchema,
+  ChangePasswordResponseSchema,
   LoginEventListSchema,
   LoginEventQuerySchema,
   MeResponseSchema,
@@ -111,6 +113,8 @@ import {
   type LoginEvent,
   type LoginEventQuery,
   type LogoutResponse,
+  type ChangePasswordInput,
+  type ChangePasswordResponse,
   type MeResponse,
   type Party,
   type Product,
@@ -192,6 +196,14 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
   const body = LoginSchema.parse(input);
   const { data } = await api.post<unknown>("/auth/login", body);
   return LoginResponseSchema.parse(data);
+}
+
+export async function changePassword(
+  input: ChangePasswordInput,
+): Promise<ChangePasswordResponse> {
+  const body = ChangePasswordSchema.parse(input);
+  const { data } = await api.post<unknown>("/auth/change-password", body);
+  return ChangePasswordResponseSchema.parse(data);
 }
 
 export async function logout(): Promise<LogoutResponse> {

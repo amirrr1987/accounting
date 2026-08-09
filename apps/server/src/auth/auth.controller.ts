@@ -9,8 +9,10 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import {
+  ChangePasswordSchema,
   LoginEventQuerySchema,
   LoginSchema,
+  type ChangePasswordResponse,
   type LoginEvent,
   type LoginEventQuery,
   type LoginResponse,
@@ -42,6 +44,26 @@ export class AuthController {
       ip: extractClientIp(req),
       userAgent: extractUserAgent(req),
     });
+  }
+
+  @Post("change-password")
+  changePassword(
+    @Body() body: unknown,
+    @Req() req: Request & { user?: JwtPayload },
+  ): Promise<ChangePasswordResponse> {
+    if (!req.user?.sub) {
+      throw new UnauthorizedException("ورود لازم است");
+    }
+    const parsed = ChangePasswordSchema.parse(body);
+    return this.authService.changePassword(
+      req.user.sub,
+      req.user.jti,
+      parsed,
+      {
+        ip: extractClientIp(req),
+        userAgent: extractUserAgent(req),
+      },
+    );
   }
 
   @Post("logout")

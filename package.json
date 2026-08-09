@@ -11,6 +11,7 @@
     "build:installer": "pnpm --filter @hesabyar/shared build && pnpm --filter @hesabyar/desktop tauri:build",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @hesabyar/server exec prisma migrate dev",
+    "db:reset": "pnpm --filter @hesabyar/shared build && pnpm --filter @hesabyar/server exec prisma migrate reset --force",
     "db:seed": "pnpm --filter @hesabyar/server prisma:seed",
     "build": "turbo run build",
     "test": "turbo run test",

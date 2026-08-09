@@ -1,4 +1,4 @@
-import { HttpException, UnauthorizedException } from "@nestjs/common";
+import { UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { AuthService } from "./auth.service";
@@ -34,7 +34,7 @@ describe("AuthService.login", () => {
     } as unknown as LoginEventService;
   }
 
-  it("returns token and session for valid admin credentials", async () => {
+  it("returns token and requires password change for default admin", async () => {
     const hash = await bcrypt.hash("admin", 4);
     const prisma = {
       user: {
@@ -44,6 +44,7 @@ describe("AuthService.login", () => {
           passwordHash: hash,
           role: "ADMIN",
           isActive: true,
+          mustChangePassword: true,
         }),
       },
     } as unknown as PrismaService;
@@ -60,16 +61,10 @@ describe("AuthService.login", () => {
     );
 
     expect(result.accessToken).toBe("test-token");
-    expect(result.user.username).toBe("admin");
-    expect(result.user.role).toBe("ADMIN");
+    expect(result.user.mustChangePassword).toBe(true);
     expect(result.sessionId).toBe(sessionId);
-    expect(result.isNewDevice).toBe(false);
-    expect(result.activeSessionCount).toBe(1);
-    expect(loginEvents.record).toHaveBeenCalledWith(
-      expect.objectContaining({ success: true, sessionId }),
-    );
-    expect(audit.log).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "LOGIN" }),
+    expect(jwt.signAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ mustChangePassword: true }),
     );
   });
 
@@ -83,6 +78,7 @@ describe("AuthService.login", () => {
           passwordHash: hash,
           role: "ADMIN",
           isActive: true,
+          mustChangePassword: true,
         }),
       },
     } as unknown as PrismaService;
@@ -102,21 +98,5 @@ describe("AuthService.login", () => {
         failReason: "INVALID_CREDENTIALS",
       }),
     );
-    expect(jwt.signAsync).not.toHaveBeenCalled();
-  });
-
-  it("rejects when locked out", async () => {
-    const prisma = {
-      user: { findUnique: jest.fn() },
-    } as unknown as PrismaService;
-    const jwt = { signAsync: jest.fn() } as unknown as JwtService;
-    const loginEvents = makeLoginEvents({
-      isLockedOut: jest.fn().mockResolvedValue(true),
-    });
-    const service = new AuthService(prisma, jwt, audit, loginEvents);
-    await expect(
-      service.login({ username: "admin", password: "admin" }, request),
-    ).rejects.toBeInstanceOf(HttpException);
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 });

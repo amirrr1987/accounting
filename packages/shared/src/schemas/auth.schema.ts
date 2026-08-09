@@ -24,6 +24,10 @@ const UserPasswordSchema = z
   .min(4, "رمز عبور حداقل ۴ کاراکتر است")
   .max(128, "رمز عبور حداکثر ۱۲۸ کاراکتر است");
 
+/** کاربر پیش‌فرض برای نصب تازه */
+export const DEFAULT_ADMIN_USERNAME = "admin";
+export const DEFAULT_ADMIN_PASSWORD = "admin";
+
 export const LoginSchema = z.object({
   username: UsernameSchema,
   password: LoginPasswordSchema,
@@ -35,6 +39,7 @@ export const AuthUserSchema = z.object({
   id: z.string().uuid(),
   username: z.string().min(1).max(64),
   role: UserRoleSchema,
+  mustChangePassword: z.boolean().default(false),
 });
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 
@@ -54,6 +59,42 @@ export type LogoutResponse = z.infer<typeof LogoutResponseSchema>;
 
 export const MeResponseSchema = AuthUserSchema;
 export type MeResponse = z.infer<typeof MeResponseSchema>;
+
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: LoginPasswordSchema,
+    newPassword: UserPasswordSchema,
+    confirmPassword: UserPasswordSchema,
+  })
+  .superRefine((data, ctx) => {
+    if (data.newPassword !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "تکرار رمز با رمز جدید یکسان نیست",
+        path: ["confirmPassword"],
+      });
+    }
+    if (data.newPassword === data.currentPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "رمز جدید باید با رمز فعلی متفاوت باشد",
+        path: ["newPassword"],
+      });
+    }
+    if (data.newPassword === DEFAULT_ADMIN_PASSWORD) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "رمز جدید نباید رمز پیش‌فرض (admin) باشد",
+        path: ["newPassword"],
+      });
+    }
+  });
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+export const ChangePasswordResponseSchema = LoginResponseSchema;
+export type ChangePasswordResponse = z.infer<
+  typeof ChangePasswordResponseSchema
+>;
 
 export const CreateUserSchema = z.object({
   username: UsernameSchema,
@@ -82,16 +123,13 @@ export const UserRecordSchema = z.object({
   username: z.string().min(1).max(64),
   role: UserRoleSchema,
   isActive: z.boolean(),
+  mustChangePassword: z.boolean().default(false),
   createdAt: z.string().datetime().optional(),
 });
 export type UserRecord = z.infer<typeof UserRecordSchema>;
 
 export const UserListSchema = z.array(UserRecordSchema);
 export type UserList = z.infer<typeof UserListSchema>;
-
-/** کاربر پیش‌فرض برای نصب تازه */
-export const DEFAULT_ADMIN_USERNAME = "admin";
-export const DEFAULT_ADMIN_PASSWORD = "admin";
 
 export function canWrite(role: UserRole): boolean {
   return role === "ADMIN" || role === "ACCOUNTANT";
