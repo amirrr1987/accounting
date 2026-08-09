@@ -6,7 +6,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "dev:server": "pnpm --filter @hesabyar/server dev",
+    "dev:server": "pnpm --filter @hesabyar/shared build && pnpm --filter @hesabyar/server dev",
     "dev:desktop": "pnpm --filter @hesabyar/desktop tauri:dev",
     "build:installer": "pnpm --filter @hesabyar/shared build && pnpm --filter @hesabyar/desktop tauri:build",
     "db:up": "docker compose up -d",

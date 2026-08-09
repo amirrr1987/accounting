@@ -5,6 +5,7 @@ import { AuditModule } from "../audit/audit.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { LoginEventService } from "./login-event.service";
 import { RolesGuard } from "./roles.guard";
 
 @Global()
@@ -20,6 +21,7 @@ import { RolesGuard } from "./roles.guard";
   controllers: [AuthController],
   providers: [
     AuthService,
+    LoginEventService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -29,6 +31,6 @@ import { RolesGuard } from "./roles.guard";
       useClass: RolesGuard,
     },
   ],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, LoginEventService, JwtModule],
 })
 export class AuthModule {}

@@ -1,8 +1,9 @@
 import { computed, ref } from "vue";
-import type { AuthUser } from "@hesabyar/shared";
+import { AuthUserSchema, type AuthUser } from "@hesabyar/shared";
 
 const TOKEN_KEY = "hesabyar-access-token";
 const USER_KEY = "hesabyar-auth-user";
+const SESSION_KEY = "hesabyar-session-id";
 
 function storageGet(key: string): string | null {
   try {
@@ -29,15 +30,15 @@ function storageRemove(key: string): void {
 }
 
 const token = ref<string | null>(storageGet(TOKEN_KEY));
+const sessionId = ref<string | null>(storageGet(SESSION_KEY));
 const user = ref<AuthUser | null>(readUser());
 
 function readUser(): AuthUser | null {
   const raw = storageGet(USER_KEY);
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as AuthUser;
-    if (!parsed.role) return null;
-    return parsed;
+    const parsed = AuthUserSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
@@ -46,18 +47,27 @@ function readUser(): AuthUser | null {
 export function useAuth() {
   const isAuthenticated = computed(() => Boolean(token.value));
 
-  function setSession(accessToken: string, nextUser: AuthUser): void {
+  function setSession(
+    accessToken: string,
+    nextUser: AuthUser,
+    nextSessionId: string,
+  ): void {
+    const userParsed = AuthUserSchema.parse(nextUser);
     token.value = accessToken;
-    user.value = nextUser;
+    user.value = userParsed;
+    sessionId.value = nextSessionId;
     storageSet(TOKEN_KEY, accessToken);
-    storageSet(USER_KEY, JSON.stringify(nextUser));
+    storageSet(USER_KEY, JSON.stringify(userParsed));
+    storageSet(SESSION_KEY, nextSessionId);
   }
 
   function clearSession(): void {
     token.value = null;
     user.value = null;
+    sessionId.value = null;
     storageRemove(TOKEN_KEY);
     storageRemove(USER_KEY);
+    storageRemove(SESSION_KEY);
   }
 
   function getToken(): string | null {
@@ -66,6 +76,7 @@ export function useAuth() {
 
   return {
     token,
+    sessionId,
     user,
     isAuthenticated,
     setSession,

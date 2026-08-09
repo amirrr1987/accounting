@@ -13,16 +13,20 @@ export const ux = {
     title: "ورود به حساب‌یار",
     subtitle: "برای ادامه، نام کاربری و رمز عبور خود را وارد کنید.",
     username: "نام کاربری",
-    usernameHint: "مثلاً admin",
+    usernameHint: "فقط حروف، عدد و . _ @ - (مثلاً admin)",
     password: "رمز عبور",
     passwordHint: "رمز عبور را وارد کنید",
     submit: "ورود به حساب",
     submitting: "در حال ورود…",
     successTitle: "ورود موفق",
     successDetail: (name: string) => `سلام ${name}، به حساب‌یار خوش آمدید.`,
+    successNewDevice: (name: string) =>
+      `سلام ${name}. ورود از دستگاه جدید ثبت شد.`,
     errorTitle: "ورود انجام نشد",
     errorDetail:
       "نام کاربری یا رمز عبور درست نیست. دوباره بررسی کنید و تلاش کنید.",
+    lockoutDetail:
+      "تعداد تلاش ناموفق زیاد است. ۱۵ دقیقه دیگر دوباره تلاش کنید.",
     requiredUsername: "نام کاربری را وارد کنید.",
     requiredPassword: "رمز عبور را وارد کنید.",
     demoHint: "نصب تازه: نام کاربری و رمز پیش‌فرض admin است.",

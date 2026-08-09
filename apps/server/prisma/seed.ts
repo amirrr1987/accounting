@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import {
@@ -7,6 +9,21 @@ import {
   DEFAULT_EXPENSE_CATEGORIES,
   IRANIAN_COA_SEED,
 } from "@hesabyar/shared";
+
+function loadEnvFile(): void {
+  if (process.env.DATABASE_URL) return;
+  const candidates = [
+    resolve(process.cwd(), ".env"),
+    resolve(__dirname, "..", ".env"),
+  ];
+  for (const envPath of candidates) {
+    if (!existsSync(envPath)) continue;
+    process.loadEnvFile(envPath);
+    return;
+  }
+}
+
+loadEnvFile();
 
 const prisma = new PrismaClient();
 

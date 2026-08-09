@@ -5,6 +5,7 @@ export const AuditActionSchema = z.enum([
   "UPDATE",
   "DELETE",
   "LOGIN",
+  "LOGOUT",
   "EXPORT",
   "RESTORE",
 ]);
@@ -35,6 +36,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   UPDATE: "ویرایش",
   DELETE: "حذف",
   LOGIN: "ورود",
+  LOGOUT: "خروج",
   EXPORT: "خروجی پشتیبان",
   RESTORE: "بازیابی پشتیبان",
 };

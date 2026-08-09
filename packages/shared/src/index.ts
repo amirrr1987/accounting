@@ -173,6 +173,7 @@ export {
   LoginSchema,
   AuthUserSchema,
   LoginResponseSchema,
+  LogoutResponseSchema,
   MeResponseSchema,
   UserRoleSchema,
   CreateUserSchema,
@@ -187,6 +188,7 @@ export {
   type LoginInput,
   type AuthUser,
   type LoginResponse,
+  type LogoutResponse,
   type MeResponse,
   type UserRole,
   type CreateUserInput,
@@ -194,6 +196,29 @@ export {
   type UserRecord,
   type UserList,
 } from "./schemas/auth.schema";
+
+export {
+  LOGIN_MAX_FAILURES,
+  LOGIN_FAILURE_WINDOW_MINUTES,
+  LOGIN_LOCKOUT_MINUTES,
+  LoginClientTypeSchema,
+  LoginFailReasonSchema,
+  LoginRiskFlagSchema,
+  LoginClientMetaSchema,
+  LoginEventSchema,
+  LoginEventListSchema,
+  LoginEventQuerySchema,
+  LOGIN_FAIL_REASON_LABELS,
+  LOGIN_CLIENT_TYPE_LABELS,
+  LOGIN_RISK_FLAG_LABELS,
+  type LoginClientType,
+  type LoginFailReason,
+  type LoginRiskFlag,
+  type LoginClientMeta,
+  type LoginEvent,
+  type LoginEventList,
+  type LoginEventQuery,
+} from "./schemas/login-event.schema";
 
 export {
   AuditActionSchema,

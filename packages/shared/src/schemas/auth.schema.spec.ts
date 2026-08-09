@@ -21,6 +21,15 @@ describe("LoginSchema", () => {
       LoginSchema.parse({ username: "admin", password: "" }),
     ).toThrow();
   });
+
+  it("rejects oversized username", () => {
+    expect(() =>
+      LoginSchema.parse({
+        username: "a".repeat(65),
+        password: "admin",
+      }),
+    ).toThrow();
+  });
 });
 
 describe("role helpers", () => {

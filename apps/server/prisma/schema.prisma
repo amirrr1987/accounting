@@ -58,8 +58,23 @@ enum AuditAction {
   UPDATE
   DELETE
   LOGIN
+  LOGOUT
   EXPORT
   RESTORE
+}
+
+enum LoginClientType {
+  DESKTOP
+  WEB
+  UNKNOWN
+}
+
+enum LoginFailReason {
+  INVALID_CREDENTIALS
+  USER_NOT_FOUND
+  USER_INACTIVE
+  LOCKED_OUT
+  VALIDATION_ERROR
 }
 
 enum ProductPricingMode {
@@ -569,7 +584,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  auditLogs AuditLog[]
+  auditLogs   AuditLog[]
+  loginEvents LoginEvent[]
 
   @@map("users")
 }
@@ -590,4 +606,39 @@ model AuditLog {
   @@index([createdAt])
   @@index([entity])
   @@map("audit_logs")
+}
+
+model LoginEvent {
+  id                String            @id @default(uuid())
+  userId            String?
+  username          String
+  success           Boolean
+  failReason        LoginFailReason?
+  ip                String?           @db.VarChar(64)
+  userAgent         String?           @db.VarChar(512)
+  clientType        LoginClientType   @default(UNKNOWN)
+  appVersion        String?           @db.VarChar(32)
+  sessionId         String?           @unique
+  correlationId     String?           @db.VarChar(64)
+  timezone          String?           @db.VarChar(64)
+  locale            String?           @db.VarChar(32)
+  platform          String?           @db.VarChar(64)
+  screen            String?           @db.VarChar(32)
+  deviceFingerprint String?           @db.VarChar(128)
+  country           String?           @db.VarChar(64)
+  city              String?           @db.VarChar(64)
+  isNewDevice       Boolean           @default(false)
+  riskFlags         String[]          @default([])
+  activeSessionCount Int?
+  createdAt         DateTime          @default(now())
+  loggedOutAt       DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([username, createdAt])
+  @@index([userId, createdAt])
+  @@index([success, createdAt])
+  @@index([ip, createdAt])
+  @@index([deviceFingerprint])
+  @@map("login_events")
 }

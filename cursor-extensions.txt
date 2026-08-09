@@ -1,0 +1,6 @@
+amirmaghami.cursor-snazzy-theme
+anysphere.remote-containers
+anysphere.remote-ssh
+anysphere.remote-wsl
+bradlc.vscode-tailwindcss
+vscodevim.vim

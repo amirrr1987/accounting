@@ -14,7 +14,7 @@ import { useAppShortcuts } from "@/composables/useAppShortcuts";
 import { useAuth } from "@/composables/useAuth";
 import { useViewport, useIsMobileRef } from "@/composables/useViewport";
 import { applyMoneyDisplaySettings } from "@/composables/useMoneyDisplay";
-import { fetchBusinessSettings } from "@/lib/api";
+import { fetchBusinessSettings, logout as apiLogout } from "@/lib/api";
 import { ux } from "@/locale/ux-copy";
 
 const router = useRouter();
@@ -47,6 +47,11 @@ function openMenu(): void {
 }
 
 async function logout(): Promise<void> {
+  try {
+    await apiLogout();
+  } catch {
+    /* نشست محلی را حتی اگر API در دسترس نباشد پاک می‌کنیم */
+  }
   clearSession();
   drawerOpen.value = false;
   await router.push("/login");

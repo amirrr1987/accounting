@@ -11,6 +11,10 @@ import {
   UnitOfMeasureSchema,
   LedgerReportSchema,
   LoginResponseSchema,
+  LoginSchema,
+  LogoutResponseSchema,
+  LoginEventListSchema,
+  LoginEventQuerySchema,
   MeResponseSchema,
   PartyListSchema,
   PartySchema,
@@ -104,6 +108,9 @@ import {
   type LedgerReport,
   type LoginInput,
   type LoginResponse,
+  type LoginEvent,
+  type LoginEventQuery,
+  type LogoutResponse,
   type MeResponse,
   type Party,
   type Product,
@@ -182,13 +189,27 @@ api.interceptors.response.use(
 );
 
 export async function login(input: LoginInput): Promise<LoginResponse> {
-  const { data } = await api.post<unknown>("/auth/login", input);
+  const body = LoginSchema.parse(input);
+  const { data } = await api.post<unknown>("/auth/login", body);
   return LoginResponseSchema.parse(data);
+}
+
+export async function logout(): Promise<LogoutResponse> {
+  const { data } = await api.post<unknown>("/auth/logout");
+  return LogoutResponseSchema.parse(data);
 }
 
 export async function fetchMe(): Promise<MeResponse> {
   const { data } = await api.get<unknown>("/auth/me");
   return MeResponseSchema.parse(data);
+}
+
+export async function fetchLoginEvents(
+  query: LoginEventQuery = {},
+): Promise<LoginEvent[]> {
+  const params = LoginEventQuerySchema.parse(query);
+  const { data } = await api.get<unknown>("/auth/login-events", { params });
+  return LoginEventListSchema.parse(data);
 }
 
 /** پینگ بک‌اند و اعتبارسنجی پاسخ با Zod */

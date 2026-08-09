@@ -9,11 +9,14 @@ import { JwtService } from "@nestjs/jwt";
 import type { Request } from "express";
 import type { UserRole } from "@hesabyar/shared";
 import { IS_PUBLIC_KEY } from "./public.decorator";
+import { LoginEventService } from "./login-event.service";
 
 export type JwtPayload = {
   sub: string;
   username: string;
   role: UserRole;
+  /** شناسه نشست (jti) — برای لاگ ورود/خروج و ابطال */
+  jti?: string;
 };
 
 @Injectable()
@@ -21,16 +24,19 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly loginEvents: LoginEventService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest<Request & { user?: JwtPayload }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: JwtPayload }>();
     const header = request.headers.authorization;
     if (!header?.startsWith("Bearer ")) {
       throw new UnauthorizedException("ورود لازم است");
@@ -38,9 +44,16 @@ export class JwtAuthGuard implements CanActivate {
     const token = header.slice("Bearer ".length).trim();
     try {
       const payload = this.jwt.verify<JwtPayload>(token);
+      if (payload.jti) {
+        const active = await this.loginEvents.isSessionActive(payload.jti);
+        if (!active) {
+          throw new UnauthorizedException("نشست پایان یافته است؛ دوباره وارد شوید");
+        }
+      }
       request.user = payload;
       return true;
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException("نشست نامعتبر یا منقضی شده است");
     }
   }

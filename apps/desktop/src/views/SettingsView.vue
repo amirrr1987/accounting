@@ -19,7 +19,11 @@ import {
   AUDIT_ACTION_LABELS,
   BackupSnapshotSchema,
   BUSINESS_TYPE_LABELS,
+  CreateUserSchema,
   DISPLAY_UNIT_LABELS,
+  LOGIN_CLIENT_TYPE_LABELS,
+  LOGIN_FAIL_REASON_LABELS,
+  LOGIN_RISK_FLAG_LABELS,
   USER_ROLE_LABELS,
   canWrite,
   type AuditLog,
@@ -27,6 +31,7 @@ import {
   type BusinessSettings,
   type BusinessType,
   type DisplayUnit,
+  type LoginEvent,
   type UserRecord,
   type UserRole,
 } from "@hesabyar/shared";
@@ -35,6 +40,7 @@ import {
   exportBackup,
   fetchAuditLogs,
   fetchBusinessSettings,
+  fetchLoginEvents,
   fetchUsers,
   restoreBackup,
   updateBusinessSettings,
@@ -61,7 +67,9 @@ const canEditBusiness = computed(() =>
 
 const users = ref<UserRecord[]>([]);
 const auditLogs = ref<AuditLog[]>([]);
+const loginEvents = ref<LoginEvent[]>([]);
 const userDialog = ref(false);
+const userFormErrors = reactive({ username: "", password: "" });
 const savingUser = ref(false);
 const savingBusiness = ref(false);
 const savingMoney = ref(false);
@@ -159,12 +167,34 @@ async function loadAudit(): Promise<void> {
   auditLogs.value = await fetchAuditLogs(100);
 }
 
+async function loadLoginEvents(): Promise<void> {
+  loginEvents.value = await fetchLoginEvents({ limit: 100 });
+}
+
+function loginEventMeta(ev: LoginEvent): string {
+  const parts = [
+    ev.success
+      ? "موفق"
+      : (ev.failReason
+          ? LOGIN_FAIL_REASON_LABELS[ev.failReason]
+          : "ناموفق"),
+    ev.ip ?? null,
+    LOGIN_CLIENT_TYPE_LABELS[ev.clientType],
+    ev.appVersion ? `v${ev.appVersion}` : null,
+    ev.isNewDevice ? "دستگاه جدید" : null,
+    ev.riskFlags.length
+      ? ev.riskFlags.map((f) => LOGIN_RISK_FLAG_LABELS[f]).join("، ")
+      : null,
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
 onMounted(async () => {
   loading.value = true;
   try {
     await loadBusiness();
     if (isAdmin.value) {
-      await Promise.all([loadUsers(), loadAudit()]);
+      await Promise.all([loadUsers(), loadAudit(), loadLoginEvents()]);
     }
   } catch {
     toast.add({ severity: "error", summary: ux.settings.loadError, life: 4000 });
@@ -261,15 +291,27 @@ function openUserDialog(): void {
 }
 
 async function saveUser(): Promise<void> {
-  if (!userForm.username.trim() || userForm.password.length < 4) return;
+  const parsed = CreateUserSchema.safeParse({
+    username: userForm.username,
+    password: userForm.password,
+    role: userForm.role,
+  });
+  if (!parsed.success) {
+    userFormErrors.username =
+      parsed.error.issues.find((i) => i.path[0] === "username")?.message ?? "";
+    userFormErrors.password =
+      parsed.error.issues.find((i) => i.path[0] === "password")?.message ?? "";
+    return;
+  }
+  userFormErrors.username = "";
+  userFormErrors.password = "";
   savingUser.value = true;
   try {
-    await createUser({
-      username: userForm.username.trim(),
-      password: userForm.password,
-      role: userForm.role,
-    });
+    await createUser(parsed.data);
     userDialog.value = false;
+    userForm.username = "";
+    userForm.password = "";
+    userForm.role = "ACCOUNTANT";
     toast.add({ severity: "success", summary: ux.settings.userCreated, life: 3000 });
     await loadUsers();
   } catch {
@@ -667,6 +709,66 @@ function onRestoreFile(event: Event): void {
           <Column field="detail" header="جزئیات" />
         </DataTable>
       </TabPanel>
+
+      <TabPanel v-if="isAdmin" header="لاگ ورود" value="login-events">
+        <ul v-if="isMobile" class="list-none m-0 p-0 space-y-2">
+          <li v-for="ev in loginEvents" :key="ev.id">
+            <MobileListCard
+              :title="`${ev.username} · ${ev.success ? 'موفق' : 'ناموفق'}`"
+              :subtitle="new Date(ev.createdAt).toLocaleString('fa-IR')"
+              :meta="loginEventMeta(ev)"
+              :meta-severity="ev.success ? 'success' : 'danger'"
+            />
+          </li>
+        </ul>
+        <DataTable
+          v-else
+          :value="loginEvents"
+          :loading="loading"
+          size="small"
+          paginator
+          :rows="15"
+        >
+          <Column header="زمان">
+            <template #body="{ data }">
+              {{ new Date(data.createdAt).toLocaleString("fa-IR") }}
+            </template>
+          </Column>
+          <Column field="username" header="کاربر" />
+          <Column header="نتیجه">
+            <template #body="{ data }">
+              <Tag
+                :value="data.success ? 'موفق' : 'ناموفق'"
+                :severity="data.success ? 'success' : 'danger'"
+              />
+            </template>
+          </Column>
+          <Column header="IP">
+            <template #body="{ data }">
+              {{ data.ip || "—" }}
+            </template>
+          </Column>
+          <Column header="کلاینت">
+            <template #body="{ data }">
+              {{ LOGIN_CLIENT_TYPE_LABELS[data.clientType as keyof typeof LOGIN_CLIENT_TYPE_LABELS] }}
+              <span v-if="data.appVersion" class="text-[var(--hy-muted)]">
+                · v{{ data.appVersion }}
+              </span>
+            </template>
+          </Column>
+          <Column header="دستگاه">
+            <template #body="{ data }">
+              {{ data.platform || "—" }}
+              <span v-if="data.isNewDevice" class="text-amber-700"> · جدید</span>
+            </template>
+          </Column>
+          <Column header="جزئیات">
+            <template #body="{ data }">
+              {{ loginEventMeta(data) }}
+            </template>
+          </Column>
+        </DataTable>
+      </TabPanel>
     </TabView>
 
     <Dialog
@@ -677,9 +779,27 @@ function onRestoreFile(event: Event): void {
     >
       <div class="flex flex-col gap-3 pt-2">
         <label class="text-sm text-[var(--hy-muted)]">نام کاربری</label>
-        <InputText v-model="userForm.username" class="min-h-11" />
+        <InputText
+          v-model="userForm.username"
+          class="min-h-11"
+          maxlength="64"
+          :invalid="Boolean(userFormErrors.username)"
+        />
+        <p v-if="userFormErrors.username" class="hy-field-error m-0" role="alert">
+          {{ userFormErrors.username }}
+        </p>
         <label class="text-sm text-[var(--hy-muted)]">رمز عبور</label>
-        <Password v-model="userForm.password" :feedback="false" toggle-mask class="w-full" />
+        <Password
+          v-model="userForm.password"
+          :feedback="false"
+          toggle-mask
+          class="w-full"
+          :input-props="{ maxlength: 128 }"
+          :invalid="Boolean(userFormErrors.password)"
+        />
+        <p v-if="userFormErrors.password" class="hy-field-error m-0" role="alert">
+          {{ userFormErrors.password }}
+        </p>
         <label class="text-sm text-[var(--hy-muted)]">نقش</label>
         <Select
           v-model="userForm.role"

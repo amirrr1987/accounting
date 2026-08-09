@@ -6,7 +6,9 @@ import Password from "primevue/password";
 import Button from "primevue/button";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import { LoginSchema } from "@hesabyar/shared";
 import { login } from "@/lib/api";
+import { buildLoginClientMeta } from "@/lib/login-client";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
 
@@ -25,14 +27,44 @@ const errors = reactive({
 const loading = ref(false);
 const formError = ref("");
 
-const canSubmit = computed(
-  () => Boolean(form.username.trim()) && Boolean(form.password) && !loading.value,
-);
+const canSubmit = computed(() => {
+  if (loading.value) return false;
+  const parsed = LoginSchema.safeParse({
+    username: form.username,
+    password: form.password,
+  });
+  return parsed.success;
+});
+
+function fieldError(
+  issues: { path: (string | number)[]; message: string }[],
+  field: "username" | "password",
+): string {
+  return issues.find((i) => i.path[0] === field)?.message ?? "";
+}
 
 function validate(): boolean {
-  errors.username = form.username.trim() ? "" : ux.auth.requiredUsername;
-  errors.password = form.password ? "" : ux.auth.requiredPassword;
-  return !errors.username && !errors.password;
+  const parsed = LoginSchema.safeParse({
+    username: form.username,
+    password: form.password,
+  });
+  if (parsed.success) {
+    errors.username = "";
+    errors.password = "";
+    form.username = parsed.data.username;
+    return true;
+  }
+  errors.username = fieldError(parsed.error.issues, "username") || ux.auth.requiredUsername;
+  errors.password = fieldError(parsed.error.issues, "password") || ux.auth.requiredPassword;
+  return false;
+}
+
+function validateField(field: "username" | "password"): void {
+  const schema = LoginSchema.shape[field];
+  const parsed = schema.safeParse(form[field]);
+  errors[field] = parsed.success
+    ? ""
+    : (parsed.error.issues[0]?.message ?? "");
 }
 
 async function submit(): Promise<void> {
@@ -40,24 +72,39 @@ async function submit(): Promise<void> {
   if (!validate()) return;
   loading.value = true;
   try {
-    const res = await login({
-      username: form.username.trim(),
+    const body = LoginSchema.parse({
+      username: form.username,
       password: form.password,
+      client: buildLoginClientMeta(),
     });
-    setSession(res.accessToken, res.user);
+    const res = await login(body);
+    setSession(res.accessToken, res.user, res.sessionId);
+    const detail = res.isNewDevice
+      ? ux.auth.successNewDevice(res.user.username)
+      : ux.auth.successDetail(res.user.username);
     toast.add({
-      severity: "success",
+      severity: res.isNewDevice ? "warn" : "success",
       summary: ux.auth.successTitle,
-      detail: ux.auth.successDetail(res.user.username),
-      life: 2500,
+      detail,
+      life: 3000,
     });
     await router.replace("/");
-  } catch {
-    formError.value = ux.auth.errorDetail;
+  } catch (err: unknown) {
+    const status =
+      err &&
+      typeof err === "object" &&
+      "response" in err &&
+      err.response &&
+      typeof err.response === "object" &&
+      "status" in err.response
+        ? Number(err.response.status)
+        : 0;
+    formError.value =
+      status === 429 ? ux.auth.lockoutDetail : ux.auth.errorDetail;
     toast.add({
       severity: "error",
       summary: ux.auth.errorTitle,
-      detail: ux.auth.errorDetail,
+      detail: formError.value,
       life: 4500,
     });
   } finally {
@@ -111,10 +158,11 @@ async function submit(): Promise<void> {
             v-model="form.username"
             autocomplete="username"
             class="w-full min-h-11"
+            maxlength="64"
             :invalid="Boolean(errors.username)"
             :aria-invalid="Boolean(errors.username)"
             :aria-describedby="errors.username ? 'username-err' : 'username-hint'"
-            @blur="errors.username = form.username.trim() ? '' : ux.auth.requiredUsername"
+            @blur="validateField('username')"
           />
           <p id="username-hint" class="text-xs text-[var(--hy-muted)] m-0">
             {{ ux.auth.usernameHint }}
@@ -142,8 +190,9 @@ async function submit(): Promise<void> {
             input-class="w-full min-h-11"
             class="w-full"
             autocomplete="current-password"
+            :input-props="{ maxlength: 128 }"
             :invalid="Boolean(errors.password)"
-            @blur="errors.password = form.password ? '' : ux.auth.requiredPassword"
+            @blur="validateField('password')"
           />
           <p
             v-if="errors.password"
