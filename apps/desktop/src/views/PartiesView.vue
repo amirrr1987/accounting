@@ -18,6 +18,7 @@ import {
   fetchParties,
   updateParty,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -106,12 +107,12 @@ async function save(): Promise<void> {
       life: 2500,
     });
     await load();
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ذخیره ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ذخیره ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;
@@ -137,12 +138,12 @@ async function deactivate(row: Party): Promise<void> {
             life: 2500,
           });
           await load();
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: "خطا",
-            detail: "غیرفعال‌سازی ناموفق بود",
-            life: 4000,
+            detail: apiErrorMessage(err, "غیرفعال‌سازی ناموفق بود"),
+            life: 6000,
           });
         }
       })();

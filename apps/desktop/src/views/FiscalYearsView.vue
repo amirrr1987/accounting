@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -7,12 +7,19 @@ import Tag from "primevue/tag";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import type { FiscalYear } from "@hesabyar/shared";
-import { todayJalali } from "@hesabyar/shared";
 import {
+  currentJalaliYear,
+  endOfJalaliYear,
+  todayJalali,
+} from "@hesabyar/shared";
+import {
+  activateFiscalYear,
   closeFiscalYear,
+  createFiscalYear,
   fetchFiscalYears,
   reopenFiscalYear,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
@@ -25,12 +32,22 @@ const years = ref<FiscalYear[]>([]);
 const loading = ref(false);
 const closeThrough = ref(todayJalali());
 
+const currentYearTitle = currentJalaliYear();
+const hasCurrentYear = computed(() =>
+  years.value.some((y) => y.title === currentYearTitle),
+);
+
 async function load(): Promise<void> {
   loading.value = true;
   try {
     years.value = await fetchFiscalYears();
-  } catch {
-    toast.add({ severity: "error", summary: ux.fiscal.loadError, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.loadError,
+      detail: apiErrorMessage(err, ux.fiscal.loadError),
+      life: 6000,
+    });
   } finally {
     loading.value = false;
   }
@@ -40,23 +57,80 @@ onMounted(() => {
   void load();
 });
 
+async function ensureCurrentYear(): Promise<void> {
+  try {
+    const created = await createFiscalYear({
+      title: currentYearTitle,
+      startJalali: `${currentYearTitle}/01/01`,
+      endJalali: endOfJalaliYear(currentYearTitle),
+    });
+    await activateFiscalYear(created.id);
+    toast.add({
+      severity: "success",
+      summary: ux.fiscal.createOk,
+      detail: ux.fiscal.activateOk,
+      life: 3500,
+    });
+    await load();
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.error,
+      detail: apiErrorMessage(err, ux.fiscal.error),
+      life: 6000,
+    });
+  }
+}
+
+async function activate(row: FiscalYear): Promise<void> {
+  try {
+    await activateFiscalYear(row.id);
+    toast.add({ severity: "success", summary: ux.fiscal.activateOk, life: 3000 });
+    await load();
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.error,
+      detail: apiErrorMessage(err, ux.fiscal.error),
+      life: 6000,
+    });
+  }
+}
+
 async function closePeriod(row: FiscalYear): Promise<void> {
   try {
-    await closeFiscalYear(row.id, { throughJalali: closeThrough.value, closeYear: false });
+    await closeFiscalYear(row.id, {
+      throughJalali: closeThrough.value,
+      closeYear: false,
+    });
     toast.add({ severity: "success", summary: ux.fiscal.closedOk, life: 3000 });
     await load();
-  } catch {
-    toast.add({ severity: "error", summary: ux.fiscal.error, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.error,
+      detail: apiErrorMessage(err, ux.fiscal.error),
+      life: 6000,
+    });
   }
 }
 
 async function closeYear(row: FiscalYear): Promise<void> {
   try {
     await closeFiscalYear(row.id, { closeYear: true });
-    toast.add({ severity: "success", summary: ux.fiscal.yearClosedOk, life: 3000 });
+    toast.add({
+      severity: "success",
+      summary: ux.fiscal.yearClosedOk,
+      life: 3000,
+    });
     await load();
-  } catch {
-    toast.add({ severity: "error", summary: ux.fiscal.error, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.error,
+      detail: apiErrorMessage(err, ux.fiscal.error),
+      life: 6000,
+    });
   }
 }
 
@@ -65,8 +139,13 @@ async function reopen(row: FiscalYear): Promise<void> {
     await reopenFiscalYear(row.id);
     toast.add({ severity: "success", summary: ux.fiscal.reopenedOk, life: 3000 });
     await load();
-  } catch {
-    toast.add({ severity: "error", summary: ux.fiscal.error, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.fiscal.error,
+      detail: apiErrorMessage(err, ux.fiscal.error),
+      life: 6000,
+    });
   }
 }
 </script>
@@ -78,7 +157,17 @@ async function reopen(row: FiscalYear): Promise<void> {
       :title="pageCopy.title"
       :subtitle="pageCopy.subtitle"
       :hint="pageCopy.hint"
-    />
+    >
+      <template #actions>
+        <Button
+          v-if="!hasCurrentYear"
+          :label="ux.fiscal.createCurrent"
+          icon="pi pi-plus"
+          class="min-h-10"
+          @click="ensureCurrentYear"
+        />
+      </template>
+    </PageHeader>
 
     <div class="hy-surface p-4 mb-4 flex flex-wrap gap-3 items-end">
       <JalaliDatePicker v-model="closeThrough" :label="ux.fiscal.closeThrough" />
@@ -96,13 +185,31 @@ async function reopen(row: FiscalYear): Promise<void> {
           <MobileListCard
             :title="row.title"
             :subtitle="`${row.startJalali} — ${row.endJalali}`"
-            :meta="row.isClosed ? ux.fiscal.closed : row.isActive ? ux.fiscal.active : ux.common.inactive"
-            :meta-severity="row.isClosed ? 'danger' : row.isActive ? 'success' : 'secondary'"
+            :meta="
+              row.isClosed
+                ? ux.fiscal.closed
+                : row.isActive
+                  ? ux.fiscal.active
+                  : ux.common.inactive
+            "
+            :meta-severity="
+              row.isClosed ? 'danger' : row.isActive ? 'success' : 'secondary'
+            "
           />
-          <p v-if="row.closedThroughJalali" class="text-xs text-[var(--hy-muted)] m-0">
+          <p
+            v-if="row.closedThroughJalali"
+            class="text-xs text-[var(--hy-muted)] m-0"
+          >
             قفل تا: {{ row.closedThroughJalali }}
           </p>
           <div class="flex flex-wrap gap-2">
+            <Button
+              v-if="!row.isActive && !row.isClosed"
+              :label="ux.fiscal.activate"
+              size="small"
+              class="min-h-10"
+              @click="activate(row)"
+            />
             <Button
               v-if="!row.isClosed"
               :label="ux.fiscal.closePeriod"
@@ -144,13 +251,32 @@ async function reopen(row: FiscalYear): Promise<void> {
         <Column header="وضعیت">
           <template #body="{ data }">
             <Tag
-              :value="data.isClosed ? ux.fiscal.closed : data.isActive ? ux.fiscal.active : ux.common.inactive"
-              :severity="data.isClosed ? 'danger' : data.isActive ? 'success' : 'secondary'"
+              :value="
+                data.isClosed
+                  ? ux.fiscal.closed
+                  : data.isActive
+                    ? ux.fiscal.active
+                    : ux.common.inactive
+              "
+              :severity="
+                data.isClosed
+                  ? 'danger'
+                  : data.isActive
+                    ? 'success'
+                    : 'secondary'
+              "
             />
           </template>
         </Column>
         <Column header="عملیات">
           <template #body="{ data }">
+            <Button
+              v-if="!data.isActive && !data.isClosed"
+              :label="ux.fiscal.activate"
+              text
+              size="small"
+              @click="activate(data)"
+            />
             <Button
               v-if="!data.isClosed"
               :label="ux.fiscal.closePeriod"

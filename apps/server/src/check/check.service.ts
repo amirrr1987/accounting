@@ -17,6 +17,8 @@ import {
   formatVoucherNumber,
   gregorianToJalali,
   jalaliToGregorianDate,
+  todayUtcDate,
+  addUtcDays,
   type Check,
   type CheckQuery,
   type CheckSummary,
@@ -90,9 +92,8 @@ export class CheckService {
   }
 
   async summary(): Promise<CheckSummary> {
-    const today = jalaliToGregorianDate(gregorianToJalali(new Date()));
-    const weekLater = new Date(today);
-    weekLater.setDate(weekLater.getDate() + 7);
+    const today = todayUtcDate();
+    const weekLater = addUtcDays(today, 7);
 
     const [total, groups, dueThisWeek, overdue] = await Promise.all([
       this.prisma.check.count(),

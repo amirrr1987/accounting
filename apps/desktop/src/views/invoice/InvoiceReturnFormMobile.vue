@@ -21,6 +21,7 @@ import {
   previewReturnInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
 import MobileStepWizard from "@/components/MobileStepWizard.vue";
@@ -110,15 +111,12 @@ async function goPreview(): Promise<void> {
   try {
     preview.value = await previewReturnInvoice(draftInput.value);
     mode.value = "preview";
-  } catch (err) {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: ux.invoices.title,
-      detail:
-        err instanceof Error && err.message
-          ? err.message
-          : ux.returnWizard.previewError,
-      life: 4000,
+      detail: apiErrorMessage(err, ux.returnWizard.previewError),
+      life: 6000,
     });
   } finally {
     loadingPreview.value = false;
@@ -137,12 +135,12 @@ async function confirmSave(): Promise<void> {
       life: 3500,
     });
     await router.push(`/invoices/${inv.id}`);
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: ux.invoices.title,
-      detail: ux.returnWizard.saveError,
-      life: 4000,
+      detail: apiErrorMessage(err, ux.returnWizard.saveError),
+      life: 6000,
     });
   } finally {
     saving.value = false;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 /**
  * مبلغ به ریال (کوچک‌ترین واحد) — در API به صورت رشته ارسال می‌شود
@@ -96,11 +97,8 @@ export function isBalanced(
 
 export const CreateVoucherSchema = z
   .object({
-    /** تاریخ شمسی به صورت 1403/05/15 */
-    dateJalali: z
-      .string()
-      .regex(/^\d{4}\/\d{2}\/\d{2}$/, "فرمت تاریخ باید YYYY/MM/DD شمسی باشد"),
-    description: z.string().min(1).max(1000),
+    /** تاریخ شمسی کسب‌وکار — در DB به‌صورت DATE میلادی ذخیره می‌شود */
+    dateJalali: JalaliDateStringSchema,    description: z.string().min(1).max(1000),
     lines: z.array(VoucherLineInputSchema).min(2, "حداقل دو ردیف الزامی است"),
   })
   .superRefine((voucher, ctx) => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 export const WeightAdjustmentKindSchema = z.enum(["SHORTAGE", "SURPLUS"]);
 export type WeightAdjustmentKind = z.infer<typeof WeightAdjustmentKindSchema>;
@@ -14,7 +15,7 @@ export const CreateWeightAdjustmentSchema = z.object({
   kind: WeightAdjustmentKindSchema,
   quantity: z.number().int().positive(),
   reason: z.string().min(1).max(500),
-  dateJalali: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/),
+  dateJalali: JalaliDateStringSchema,
   sourceInvoiceId: z.string().uuid().nullable().optional(),
 });
 export type CreateWeightAdjustmentInput = z.infer<

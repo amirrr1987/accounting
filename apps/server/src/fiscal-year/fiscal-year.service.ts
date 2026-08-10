@@ -6,6 +6,8 @@ import {
   CloseFiscalYearSchema,
   assertFiscalDateWritable,
   compareJalali,
+  currentJalaliYear,
+  endOfJalaliYear,
   todayJalali,
   type FiscalYear,
 } from "@hesabyar/shared";
@@ -15,37 +17,54 @@ import { PrismaService } from "../prisma/prisma.service";
 export class FiscalYearService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private toDto(row: {
+    id: string;
+    title: string;
+    startJalali: string;
+    endJalali: string;
+    isClosed: boolean;
+    isActive: boolean;
+    closedThroughJalali: string | null;
+  }): FiscalYear {
+    return FiscalYearSchema.parse({
+      ...row,
+      closedThroughJalali: row.closedThroughJalali ?? null,
+    });
+  }
+
   async findAll(): Promise<FiscalYear[]> {
     const rows = await this.prisma.fiscalYear.findMany({
       orderBy: { title: "desc" },
     });
-    return FiscalYearListSchema.parse(
-      rows.map((r) => ({
-        ...r,
-        closedThroughJalali: r.closedThroughJalali ?? null,
-      })),
-    );
+    return FiscalYearListSchema.parse(rows.map((r) => this.toDto(r)));
   }
 
   async getActive(): Promise<FiscalYear | null> {
     const row = await this.prisma.fiscalYear.findFirst({
       where: { isActive: true },
     });
-    return row
-      ? FiscalYearSchema.parse({
-          ...row,
-          closedThroughJalali: row.closedThroughJalali ?? null,
-        })
-      : null;
+    return row ? this.toDto(row) : null;
   }
 
   async create(raw: unknown): Promise<FiscalYear> {
     const input = CreateFiscalYearSchema.parse(raw);
-    const created = await this.prisma.fiscalYear.create({ data: input });
-    return FiscalYearSchema.parse({
-      ...created,
-      closedThroughJalali: created.closedThroughJalali ?? null,
-    });
+    if (compareJalali(input.startJalali, input.endJalali) > 0) {
+      throw new BadRequestException("تاریخ شروع باید قبل از پایان باشد");
+    }
+    try {
+      const created = await this.prisma.fiscalYear.create({ data: input });
+      return this.toDto(created);
+    } catch (e) {
+      if (
+        e &&
+        typeof e === "object" &&
+        "code" in e &&
+        (e as { code: string }).code === "P2002"
+      ) {
+        throw new BadRequestException(`سال مالی «${input.title}» از قبل وجود دارد`);
+      }
+      throw e;
+    }
   }
 
   async activate(id: string): Promise<FiscalYear> {
@@ -62,10 +81,7 @@ export class FiscalYearService {
     const row = await this.prisma.fiscalYear.findUniqueOrThrow({
       where: { id },
     });
-    return FiscalYearSchema.parse({
-      ...row,
-      closedThroughJalali: row.closedThroughJalali ?? null,
-    });
+    return this.toDto(row);
   }
 
   async close(id: string, raw: unknown): Promise<FiscalYear> {
@@ -94,10 +110,7 @@ export class FiscalYearService {
       },
     });
 
-    return FiscalYearSchema.parse({
-      ...updated,
-      closedThroughJalali: updated.closedThroughJalali ?? null,
-    });
+    return this.toDto(updated);
   }
 
   async reopen(id: string): Promise<FiscalYear> {
@@ -105,10 +118,7 @@ export class FiscalYearService {
       where: { id },
       data: { isClosed: false, closedThroughJalali: null },
     });
-    return FiscalYearSchema.parse({
-      ...updated,
-      closedThroughJalali: null,
-    });
+    return this.toDto(updated);
   }
 
   async assertWritable(dateJalali: string): Promise<void> {
@@ -133,37 +143,41 @@ export class FiscalYearService {
     }
   }
 
+  /**
+   * تضمین وجود و فعال بودن سال مالی منطبق با سال شمسی جاری.
+   * تاریخ کسب‌وکار جلالی است؛ اگر سال قبلی هنوز فعال باشد، سال جاری ساخته/فعال می‌شود.
+   */
   async ensureDefaultYear(): Promise<FiscalYear | null> {
-    const active = await this.getActive();
-    if (active) return active;
+    const year = currentJalaliYear();
+    const endJalali = endOfJalaliYear(year);
+    const startJalali = `${year}/01/01`;
 
-    const today = todayJalali();
-    const year = today.split("/")[0] ?? "1403";
-    const existing = await this.prisma.fiscalYear.findUnique({
+    let current = await this.prisma.fiscalYear.findUnique({
       where: { title: year },
     });
-    if (existing) {
-      const row = await this.prisma.fiscalYear.update({
-        where: { id: existing.id },
-        data: { isActive: true },
+
+    if (!current) {
+      current = await this.prisma.fiscalYear.create({
+        data: {
+          title: year,
+          startJalali,
+          endJalali,
+          isActive: false,
+        },
       });
-      return FiscalYearSchema.parse({
-        ...row,
-        closedThroughJalali: row.closedThroughJalali ?? null,
+    } else if (current.endJalali !== endJalali) {
+      // اصلاح پایان سال کبیسه در داده‌های قدیمی
+      current = await this.prisma.fiscalYear.update({
+        where: { id: current.id },
+        data: { endJalali },
       });
     }
 
-    const created = await this.prisma.fiscalYear.create({
-      data: {
-        title: year,
-        startJalali: `${year}/01/01`,
-        endJalali: `${year}/12/29`,
-        isActive: true,
-      },
-    });
-    return FiscalYearSchema.parse({
-      ...created,
-      closedThroughJalali: null,
-    });
+    const active = await this.getActive();
+    if (!active || active.title !== year) {
+      return this.activate(current.id);
+    }
+
+    return this.toDto(current);
   }
 }

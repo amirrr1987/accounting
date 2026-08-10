@@ -22,6 +22,7 @@ import { createVoucher, fetchAccounts } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/api-error";
 import { formatMoneyFa } from "@/lib/money";
 import { useIsMobileRef } from "@/composables/useViewport";
+import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 
 type DraftLine = {
   key: number;
@@ -175,10 +176,7 @@ async function save(): Promise<void> {
     </div>
 
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="flex flex-col gap-2">
-        <label class="text-sm text-slate-600">تاریخ شمسی (YYYY/MM/DD)</label>
-        <InputText v-latin-digits v-model="form.dateJalali" placeholder="1403/05/15" class="w-full" />
-      </div>
+      <JalaliDatePicker v-model="form.dateJalali" label="تاریخ سند" />
       <div class="flex flex-col gap-2">
         <label class="text-sm text-slate-600">شرح سند</label>
         <InputText v-model="form.description" class="w-full" />

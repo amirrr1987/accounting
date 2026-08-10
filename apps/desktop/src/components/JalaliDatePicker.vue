@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import Select from "primevue/select";
-import { isValidJalaliDateString, todayJalali } from "@hesabyar/shared";
+import {
+  currentJalaliYear,
+  isValidJalaliDateString,
+  todayJalali,
+} from "@hesabyar/shared";
 
 const model = defineModel<string>({ default: "" });
 
@@ -9,22 +13,26 @@ const props = withDefaults(
   defineProps<{
     label?: string;
     invalid?: boolean;
+    /** اگر true باشد مقدار خالی به امروز تبدیل نمی‌شود (برای فیلترهای اختیاری) */
+    allowEmpty?: boolean;
   }>(),
-  { label: "تاریخ", invalid: false },
+  { label: "تاریخ", invalid: false, allowEmpty: false },
 );
 
-const years = Array.from({ length: 11 }, (_, i) => 1400 + i);
+const currentYear = Number(currentJalaliYear());
+const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
 const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
 const parts = computed(() => {
-  const [y, m, d] = (model.value || todayJalali()).split("/").map(Number);
-  return { y: y ?? 1403, m: m ?? 1, d: d ?? 1 };
+  const source = model.value || (props.allowEmpty ? "" : todayJalali());
+  if (!source) return { y: currentYear, m: 1, d: 1 };
+  const [y, m, d] = source.split("/").map(Number);
+  return { y: y ?? currentYear, m: m ?? 1, d: d ?? 1 };
 });
 
 const dayOptions = computed(() => {
   const { y, m } = parts.value;
   let max = m <= 6 ? 31 : m <= 11 ? 30 : 29;
-  // سال کبیسه: اسفند ۳۰ روز دارد
   if (m === 12 && isValidJalaliDateString(`${y}/12/30`)) {
     max = 30;
   }
@@ -45,7 +53,7 @@ function emit(y: number, m: number, d: number): void {
 watch(
   () => model.value,
   (v) => {
-    if (!v) model.value = todayJalali();
+    if (!v && !props.allowEmpty) model.value = todayJalali();
   },
   { immediate: true },
 );

@@ -8,6 +8,8 @@ import {
   DEFAULT_UNITS,
   DEFAULT_EXPENSE_CATEGORIES,
   IRANIAN_COA_SEED,
+  currentJalaliYear,
+  endOfJalaliYear,
 } from "@hesabyar/shared";
 
 function loadEnvFile(): void {
@@ -164,21 +166,53 @@ async function seedUnits(): Promise<void> {
 }
 
 async function seedFiscalYear(): Promise<void> {
-  const existing = await prisma.fiscalYear.findFirst();
-  if (existing) {
-    console.log(`Fiscal year already exists (${existing.title})`);
+  const year = currentJalaliYear();
+  const endJalali = endOfJalaliYear(year);
+  const startJalali = `${year}/01/01`;
+
+  const current = await prisma.fiscalYear.findUnique({ where: { title: year } });
+  if (!current) {
+    await prisma.$transaction([
+      prisma.fiscalYear.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      }),
+      prisma.fiscalYear.create({
+        data: {
+          title: year,
+          startJalali,
+          endJalali,
+          isActive: true,
+        },
+      }),
+    ]);
+    console.log(`Seeded fiscal year ${year} (${startJalali} — ${endJalali})`);
     return;
   }
-  const year = "1403";
-  await prisma.fiscalYear.create({
-    data: {
-      title: year,
-      startJalali: `${year}/01/01`,
-      endJalali: `${year}/12/29`,
-      isActive: true,
-    },
-  });
-  console.log(`Seeded fiscal year ${year}`);
+
+  if (current.endJalali !== endJalali) {
+    await prisma.fiscalYear.update({
+      where: { id: current.id },
+      data: { endJalali },
+    });
+  }
+
+  if (!current.isActive) {
+    await prisma.$transaction([
+      prisma.fiscalYear.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      }),
+      prisma.fiscalYear.update({
+        where: { id: current.id },
+        data: { isActive: true },
+      }),
+    ]);
+    console.log(`Activated fiscal year ${year}`);
+    return;
+  }
+
+  console.log(`Fiscal year ${year} already active`);
 }
 
 async function seedExpenseCategories(): Promise<void> {

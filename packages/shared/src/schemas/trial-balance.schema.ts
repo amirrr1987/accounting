@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { AccountLevelSchema, AccountNatureSchema, AccountTypeSchema } from "./account.schema";
 import { movementDelta } from "./ledger.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 export const TrialBalanceQuerySchema = z.object({
   /** تاریخ مقطع شمسی — شامل خود روز */
-  asOfJalali: z
-    .string()
-    .regex(/^\d{4}\/\d{2}\/\d{2}$/, "فرمت تاریخ باید YYYY/MM/DD شمسی باشد"),
+  asOfJalali: JalaliDateStringSchema,
 });
 
 export type TrialBalanceQuery = z.infer<typeof TrialBalanceQuerySchema>;

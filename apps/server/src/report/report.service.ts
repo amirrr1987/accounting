@@ -27,6 +27,8 @@ import {
   jalaliMonthKey,
   jalaliMonthLabel,
   jalaliToGregorianDate,
+  todayUtcDate,
+  addUtcDays,
   netFromMovements,
   type BalanceSheetReport,
   type CashFlowReport,
@@ -461,8 +463,7 @@ export class ReportService {
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
 
-    const weekLater = new Date(asOf);
-    weekLater.setDate(weekLater.getDate() + 7);
+    const weekLater = addUtcDays(asOf, 7);
 
     const [
       cashBal,
@@ -533,8 +534,7 @@ export class ReportService {
     const to = jalaliToGregorianDate(toJalali);
     const cashAccountIds = await this.liquidAccountIds();
 
-    const dayBeforeFrom = new Date(from);
-    dayBeforeFrom.setDate(dayBeforeFrom.getDate() - 1);
+    const dayBeforeFrom = addUtcDays(from, -1);
 
     const openingBalance = await this.sumLiquidBalance(
       cashAccountIds,
@@ -589,10 +589,9 @@ export class ReportService {
     const { fromJalali, toJalali } = ReportRangeQuerySchema.parse(query);
     const from = jalaliToGregorianDate(fromJalali);
     const to = jalaliToGregorianDate(toJalali);
-    const asOf = new Date();
+    const asOf = todayUtcDate();
 
-    const weekLater = new Date(asOf);
-    weekLater.setDate(weekLater.getDate() + 7);
+    const weekLater = addUtcDays(asOf, 7);
 
     const checks = await this.prisma.check.findMany({
       where: { dueDate: { gte: from, lte: to } },

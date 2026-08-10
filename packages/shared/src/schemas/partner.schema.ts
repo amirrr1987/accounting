@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MoneySchema } from "./voucher.schema";
 import { ExpensePayFromSchema } from "./expense.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 export const PARTNER_COA_PARENTS = {
   capital: "322",
@@ -90,10 +91,7 @@ export type OwnershipDashboard = z.infer<typeof OwnershipDashboardSchema>;
 export const CreatePartnerDrawingSchema = z
   .object({
     partnerId: z.string().uuid(),
-    dateJalali: z
-      .string()
-      .regex(/^\d{4}\/\d{2}\/\d{2}$/, "فرمت تاریخ باید YYYY/MM/DD شمسی باشد"),
-    amount: MoneySchema.refine((v) => v > 0n, "مبلغ باید بزرگ‌تر از صفر باشد"),
+    dateJalali: JalaliDateStringSchema,    amount: MoneySchema.refine((v) => v > 0n, "مبلغ باید بزرگ‌تر از صفر باشد"),
     description: z.string().max(500).optional().default(""),
     payFrom: ExpensePayFromSchema.default("CASH"),
     cashAccountId: z.string().uuid().optional(),

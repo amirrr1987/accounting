@@ -22,6 +22,7 @@ import {
   updateProduct,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -136,12 +137,12 @@ async function save(): Promise<void> {
     }
     dialogVisible.value = false;
     await load();
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ذخیره کالا ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ذخیره کالا ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;
@@ -167,12 +168,12 @@ async function deactivate(row: Product): Promise<void> {
             life: 2500,
           });
           await load();
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: "خطا",
-            detail: "غیرفعال‌سازی ناموفق بود",
-            life: 4000,
+            detail: apiErrorMessage(err, "غیرفعال‌سازی ناموفق بود"),
+            life: 6000,
           });
         }
       })();

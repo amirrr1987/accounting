@@ -1,11 +1,9 @@
 import { z } from "zod";
 import { MoneySchema } from "./voucher.schema";
 import { PaymentCheckDetailsSchema } from "./check.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
-const jalaliDate = z
-  .string()
-  .regex(/^\d{4}\/\d{2}\/\d{2}$/, "فرمت تاریخ باید YYYY/MM/DD شمسی باشد");
-
+const jalaliDate = JalaliDateStringSchema;
 export const PaymentMethodSchema = z.enum([
   "CASH",
   "CHECK_PAYABLE",

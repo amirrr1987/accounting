@@ -12,6 +12,7 @@ import type { CheckKind, CreateCheckInput, Party } from "@hesabyar/shared";
 import { todayJalali } from "@hesabyar/shared";
 import { createCheck, fetchParties } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -124,12 +125,12 @@ async function confirmSave(): Promise<void> {
       life: 3500,
     });
     await router.push("/checks");
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: ux.nav.checks,
-      detail: ux.checkWizard.saveError,
-      life: 4000,
+      detail: apiErrorMessage(err, ux.checkWizard.saveError),
+      life: 6000,
     });
   } finally {
     saving.value = false;

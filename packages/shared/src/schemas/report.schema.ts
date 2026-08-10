@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { AccountTypeSchema } from "./account.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
-const jalaliDate = z
-  .string()
-  .regex(/^\d{4}\/\d{2}\/\d{2}$/, "فرمت تاریخ باید YYYY/MM/DD شمسی باشد");
-
+const jalaliDate = JalaliDateStringSchema;
 export const ReportRangeQuerySchema = z.object({
   fromJalali: jalaliDate,
   toJalali: jalaliDate,

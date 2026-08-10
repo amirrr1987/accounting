@@ -1,18 +1,13 @@
 import { z } from "zod";
 import { AccountNatureSchema, AccountSchema } from "./account.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 export const LedgerQuerySchema = z.object({
   accountId: z.string().uuid(),
   /** تاریخ شروع شمسی — شامل خود روز */
-  fromJalali: z
-    .string()
-    .regex(/^\d{4}\/\d{2}\/\d{2}$/)
-    .optional(),
+  fromJalali: JalaliDateStringSchema.optional(),
   /** تاریخ پایان شمسی — شامل خود روز */
-  toJalali: z
-    .string()
-    .regex(/^\d{4}\/\d{2}\/\d{2}$/)
-    .optional(),
+  toJalali: JalaliDateStringSchema.optional(),
 });
 
 export type LedgerQuery = z.infer<typeof LedgerQuerySchema>;

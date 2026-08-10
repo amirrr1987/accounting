@@ -12,6 +12,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { INVOICE_KIND_LABELS, type Invoice } from "@hesabyar/shared";
 import { fetchInvoices, softDeleteInvoice } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
 import PageHeader from "@/components/PageHeader.vue";
@@ -63,12 +64,15 @@ function confirmDelete(row: Invoice): void {
             life: 3200,
           });
           await load();
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: "حذف انجام نشد",
-            detail: "فاکتور حذف نشد. اتصال را بررسی کنید و دوباره تلاش کنید.",
-            life: 4500,
+            detail: apiErrorMessage(
+              err,
+              "فاکتور حذف نشد. اتصال را بررسی کنید و دوباره تلاش کنید.",
+            ),
+            life: 6000,
           });
         }
       })();

@@ -8,7 +8,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { LoginSchema } from "@hesabyar/shared";
 import { login } from "@/lib/api";
-import { apiErrorStatus } from "@/lib/api-error";
+import { apiErrorMessage, apiErrorStatus } from "@/lib/api-error";
 import { buildLoginClientMeta } from "@/lib/login-client";
 import { useAuth } from "@/composables/useAuth";
 import { ux } from "@/locale/ux-copy";
@@ -103,7 +103,9 @@ async function submit(): Promise<void> {
   } catch (err: unknown) {
     const status = apiErrorStatus(err) ?? 0;
     formError.value =
-      status === 429 ? ux.auth.lockoutDetail : ux.auth.errorDetail;
+      status === 429
+        ? ux.auth.lockoutDetail
+        : apiErrorMessage(err, ux.auth.errorDetail);
     toast.add({
       severity: "error",
       summary: ux.auth.errorTitle,

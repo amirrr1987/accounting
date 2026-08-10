@@ -34,6 +34,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { usePageCopy } from "@/composables/usePageCopy";
 
 const router = useRouter();
@@ -148,12 +149,12 @@ async function saveStatus(): Promise<void> {
     });
     statusDialog.value = false;
     await load();
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "تغییر وضعیت ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "تغییر وضعیت ناموفق بود"),
+      life: 6000,
     });
   } finally {
     savingStatus.value = false;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MoneySchema } from "./voucher.schema";
+import { JalaliDateStringSchema } from "./jalali-date.schema";
 
 export const PartyKindSchema = z.enum(["CUSTOMER", "SUPPLIER"]);
 export type PartyKind = z.infer<typeof PartyKindSchema>;
@@ -118,7 +119,7 @@ export type InvoiceLineInput = z.infer<typeof InvoiceLineInputSchema>;
 export const CreateInvoiceSchema = z.object({
   kind: z.enum(["SALE", "PURCHASE"]),
   partyId: z.string().uuid(),
-  dateJalali: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/),
+  dateJalali: JalaliDateStringSchema,
   description: z.string().max(1000).optional().default(""),
   headerDiscount: MoneySchema.optional().default(0n),
   commissionAmount: MoneySchema.optional().default(0n),
@@ -135,8 +136,7 @@ export type ReturnLineInput = z.infer<typeof ReturnLineInputSchema>;
 
 export const CreateReturnInvoiceSchema = z.object({
   originalInvoiceId: z.string().uuid(),
-  dateJalali: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/),
-  returnReason: z.string().min(1).max(500),
+  dateJalali: JalaliDateStringSchema,  returnReason: z.string().min(1).max(500),
   description: z.string().max(1000).optional().default(""),
   lines: z.array(ReturnLineInputSchema).min(1),
 });

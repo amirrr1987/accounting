@@ -11,6 +11,7 @@ import type { CheckKind, CreateCheckInput, Party } from "@hesabyar/shared";
 import { CHECK_KIND_LABELS, todayJalali } from "@hesabyar/shared";
 import { createCheck, fetchParties } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { useIsMobileRef } from "@/composables/useViewport";
 import CheckFormMobile from "@/views/check/CheckFormMobile.vue";
@@ -99,12 +100,12 @@ async function save(): Promise<void> {
       life: 3500,
     });
     await router.push("/checks");
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت چک ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت چک ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;

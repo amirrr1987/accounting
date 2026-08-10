@@ -12,6 +12,7 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import type { CreateUnitInput, UnitOfMeasure } from "@hesabyar/shared";
 import { createUnit, fetchUnits, updateUnit } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
@@ -94,12 +95,12 @@ async function save(): Promise<void> {
     }
     dialogVisible.value = false;
     await load();
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ذخیره واحد ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ذخیره واحد ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;

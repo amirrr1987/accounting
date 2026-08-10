@@ -19,6 +19,7 @@ import {
   fetchParties,
 } from "@/lib/api";
 import { parseMoneyInput } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { useIsMobileRef } from "@/composables/useViewport";
 import { usePageCopy } from "@/composables/usePageCopy";
@@ -259,8 +260,13 @@ async function submitReceipt(): Promise<void> {
       life: 4000,
     });
     await router.push(`/vouchers/${voucher.id}`);
-  } catch {
-    toast.add({ severity: "error", summary: ux.payments.error, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.payments.error,
+      detail: apiErrorMessage(err, ux.payments.error),
+      life: 6000,
+    });
   } finally {
     saving.value = false;
   }
@@ -294,8 +300,13 @@ async function submitPayment(): Promise<void> {
       life: 4000,
     });
     await router.push(`/vouchers/${voucher.id}`);
-  } catch {
-    toast.add({ severity: "error", summary: ux.payments.error, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.payments.error,
+      detail: apiErrorMessage(err, ux.payments.error),
+      life: 6000,
+    });
   } finally {
     saving.value = false;
   }

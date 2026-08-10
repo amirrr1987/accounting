@@ -26,6 +26,7 @@ import {
   fetchProducts,
   fetchWeightAdjustments,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
@@ -115,12 +116,12 @@ async function save(): Promise<void> {
     });
     dialogVisible.value = false;
     await load();
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت کسر/اضافه بار ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت کسر/اضافه بار ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;

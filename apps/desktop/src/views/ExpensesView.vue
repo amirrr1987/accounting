@@ -47,6 +47,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { formatMoneyFa, parseMoneyInput } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useMoneyDisplay } from "@/composables/useMoneyDisplay";
 import { usePageCopy } from "@/composables/usePageCopy";
 import { ux } from "@/locale/ux-copy";
@@ -229,12 +230,12 @@ async function saveExpense(): Promise<void> {
       detail: "هزینه با موفقیت ثبت شد",
       life: 3000,
     });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت هزینه ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت هزینه ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;
@@ -269,12 +270,12 @@ async function saveDrawing(): Promise<void> {
       detail: "برداشت شخصی ثبت شد",
       life: 3000,
     });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت برداشت ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت برداشت ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;
@@ -299,12 +300,12 @@ async function saveOwner(): Promise<void> {
       detail: "مالک جدید اضافه شد",
       life: 3000,
     });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت مالک ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت مالک ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;

@@ -71,6 +71,7 @@ import {
   PartnerDrawingSchema,
   CreatePartnerDrawingSchema,
   CloseFiscalYearSchema,
+  CreateFiscalYearSchema,
   FiscalYearListSchema,
   FiscalYearSchema,
   AuditLogListSchema,
@@ -83,6 +84,7 @@ import {
   type Account,
   type BalanceSheetReport,
   type CloseFiscalYearInput,
+  type CreateFiscalYearInput,
   type CreatePaymentInput,
   type CreateReceiptInput,
   type FiscalYear,
@@ -658,6 +660,19 @@ export async function updateBusinessSettings(
 export async function fetchFiscalYears(): Promise<FiscalYear[]> {
   const { data } = await api.get<unknown>("/fiscal-years");
   return FiscalYearListSchema.parse(data);
+}
+
+export async function createFiscalYear(
+  input: CreateFiscalYearInput,
+): Promise<FiscalYear> {
+  const body = CreateFiscalYearSchema.parse(input);
+  const { data } = await api.post<unknown>("/fiscal-years", body);
+  return FiscalYearSchema.parse(data);
+}
+
+export async function activateFiscalYear(id: string): Promise<FiscalYear> {
+  const { data } = await api.post<unknown>(`/fiscal-years/${id}/activate`, {});
+  return FiscalYearSchema.parse(data);
 }
 
 export async function closeFiscalYear(

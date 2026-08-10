@@ -11,7 +11,7 @@ describe("assertFiscalDateWritable", () => {
   const fy = {
     title: "1403",
     startJalali: "1403/01/01",
-    endJalali: "1403/12/29",
+    endJalali: "1403/12/30",
     isClosed: false,
     closedThroughJalali: "1403/06/30",
   };

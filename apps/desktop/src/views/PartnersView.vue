@@ -36,6 +36,7 @@ import {
   fetchPartners,
   updatePartner,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
@@ -220,12 +221,12 @@ async function save(): Promise<void> {
     await load();
     await loadBalances();
     toast.add({ severity: "success", summary: "ثبت شد", life: 3000 });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت شریک ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت شریک ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;
@@ -247,12 +248,12 @@ async function deactivate(row: Partner): Promise<void> {
           await load();
           await loadBalances();
           toast.add({ severity: "success", summary: "غیرفعال شد", life: 3000 });
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: "خطا",
-            detail: "عملیات ناموفق",
-            life: 4000,
+            detail: apiErrorMessage(err, "عملیات ناموفق"),
+            life: 6000,
           });
         }
       })();
@@ -284,8 +285,13 @@ async function saveDrawing(): Promise<void> {
     drawings.value = await fetchPartnerDrawings();
     await loadBalances();
     toast.add({ severity: "success", summary: "برداشت ثبت شد", life: 3000 });
-  } catch {
-    toast.add({ severity: "error", summary: "خطا", detail: "ثبت برداشت ناموفق", life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: "خطا",
+      detail: apiErrorMessage(err, "ثبت برداشت ناموفق"),
+      life: 6000,
+    });
   } finally {
     saving.value = false;
   }

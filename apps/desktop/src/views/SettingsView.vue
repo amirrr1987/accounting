@@ -46,6 +46,7 @@ import {
   updateBusinessSettings,
   updateUser,
 } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/api-error";
 import { downloadBackupJson, readBackupFile } from "@/lib/backup-download";
 import PageHeader from "@/components/PageHeader.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
@@ -234,11 +235,12 @@ async function saveBusiness(): Promise<void> {
       summary: ux.settings.businessSaved,
       life: 3000,
     });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: ux.settings.businessError,
-      life: 4000,
+      detail: apiErrorMessage(err, ux.settings.businessError),
+      life: 6000,
     });
   } finally {
     savingBusiness.value = false;
@@ -263,11 +265,12 @@ async function saveMoney(): Promise<void> {
       summary: ux.settings.moneySaved,
       life: 3000,
     });
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: ux.settings.moneyError,
-      life: 4000,
+      detail: apiErrorMessage(err, ux.settings.moneyError),
+      life: 6000,
     });
   } finally {
     savingMoney.value = false;
@@ -314,8 +317,13 @@ async function saveUser(): Promise<void> {
     userForm.role = "ACCOUNTANT";
     toast.add({ severity: "success", summary: ux.settings.userCreated, life: 3000 });
     await loadUsers();
-  } catch {
-    toast.add({ severity: "error", summary: ux.settings.userError, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.settings.userError,
+      detail: apiErrorMessage(err, ux.settings.userError),
+      life: 6000,
+    });
   } finally {
     savingUser.value = false;
   }
@@ -337,11 +345,12 @@ async function toggleUserActive(row: UserRecord): Promise<void> {
         try {
           await updateUser(row.id, { isActive: nextActive });
           await loadUsers();
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: ux.settings.userError,
-            life: 4000,
+            detail: apiErrorMessage(err, ux.settings.userError),
+            life: 6000,
           });
         }
       })();
@@ -356,8 +365,13 @@ async function onExportBackup(): Promise<void> {
     downloadBackupJson(snapshot);
     toast.add({ severity: "success", summary: ux.settings.backupExported, life: 3000 });
     await loadAudit();
-  } catch {
-    toast.add({ severity: "error", summary: ux.settings.backupError, life: 4000 });
+  } catch (err: unknown) {
+    toast.add({
+      severity: "error",
+      summary: ux.settings.backupError,
+      detail: apiErrorMessage(err, ux.settings.backupError),
+      life: 6000,
+    });
   } finally {
     loading.value = false;
   }
@@ -386,11 +400,12 @@ function onRestoreFile(event: Event): void {
             life: 4000,
           });
           await loadAudit();
-        } catch {
+        } catch (err: unknown) {
           toast.add({
             severity: "error",
             summary: ux.settings.backupError,
-            life: 4000,
+            detail: apiErrorMessage(err, ux.settings.backupError),
+            life: 6000,
           });
         } finally {
           loading.value = false;

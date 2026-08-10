@@ -23,6 +23,7 @@ import {
   previewReturnInvoice,
 } from "@/lib/api";
 import { formatMoneyFa } from "@/lib/money";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useIsMobileRef } from "@/composables/useViewport";
 import InvoiceReturnFormMobile from "@/views/invoice/InvoiceReturnFormMobile.vue";
 import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
@@ -112,12 +113,12 @@ async function goPreview(): Promise<void> {
   try {
     preview.value = await previewReturnInvoice(draftInput.value);
     step.value = "preview";
-  } catch (err) {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: err instanceof Error ? err.message : "پیش‌نمایش ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "پیش‌نمایش ناموفق بود"),
+      life: 6000,
     });
   } finally {
     loadingPreview.value = false;
@@ -136,12 +137,12 @@ async function confirmSave(): Promise<void> {
       life: 3500,
     });
     await router.push(`/invoices/${inv.id}`);
-  } catch {
+  } catch (err: unknown) {
     toast.add({
       severity: "error",
       summary: "خطا",
-      detail: "ثبت مرجوعی ناموفق بود",
-      life: 4000,
+      detail: apiErrorMessage(err, "ثبت مرجوعی ناموفق بود"),
+      life: 6000,
     });
   } finally {
     saving.value = false;

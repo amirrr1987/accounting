@@ -18,12 +18,18 @@ function messageFromData(data: unknown): string | undefined {
   return undefined;
 }
 
+const AXIOS_STATUS_MESSAGE = /^Request failed with status code \d+$/i;
+
 /** Extract a user-facing message from an unknown API/thrown error. */
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    return (
-      messageFromData(error.response?.data) ?? (error.message || fallback)
-    );
+    const fromBody = messageFromData(error.response?.data);
+    if (fromBody) return fromBody;
+    // Prefer local fallback over Axios's generic English status text.
+    if (error.message && !AXIOS_STATUS_MESSAGE.test(error.message)) {
+      return error.message;
+    }
+    return fallback;
   }
   if (error instanceof Error && error.message.length > 0) {
     return error.message;

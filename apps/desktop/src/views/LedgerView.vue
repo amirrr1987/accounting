@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import Select from "primevue/select";
-import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -14,6 +13,7 @@ import { formatMoneyFa } from "@/lib/money";
 import { exportLedgerExcel, exportLedgerPdf } from "@/lib/ledger-export";
 import PageHeader from "@/components/PageHeader.vue";
 import MobileListCard from "@/components/MobileListCard.vue";
+import JalaliDatePicker from "@/components/JalaliDatePicker.vue";
 import { usePageCopy } from "@/composables/usePageCopy";
 
 const toast = useToast();
@@ -126,14 +126,8 @@ function onPdf(): void {
           class="w-full"
         />
       </div>
-      <div class="flex flex-col gap-2">
-        <label class="text-sm text-slate-600">از تاریخ</label>
-        <InputText v-latin-digits v-model="fromJalali" placeholder="1403/01/01" class="w-full" />
-      </div>
-      <div class="flex flex-col gap-2">
-        <label class="text-sm text-slate-600">تا تاریخ</label>
-        <InputText v-latin-digits v-model="toJalali" placeholder="1403/12/29" class="w-full" />
-      </div>
+      <JalaliDatePicker v-model="fromJalali" label="از تاریخ" allow-empty />
+      <JalaliDatePicker v-model="toJalali" label="تا تاریخ" allow-empty />
     </div>
 
     <Button label="نمایش" icon="pi pi-search" :loading="loading" @click="load" />

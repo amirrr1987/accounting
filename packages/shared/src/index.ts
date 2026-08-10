@@ -57,12 +57,21 @@ export {
   jalaliToGregorianDate,
   gregorianToJalali,
   todayJalali,
+  todayUtcDate,
+  addUtcDays,
+  endOfJalaliYear,
+  currentJalaliYear,
   compareJalali,
   isJalaliInRange,
   jalaliMonthKey,
   jalaliMonthLabel,
   isValidJalaliDateString,
 } from "./lib/jalali";
+
+export {
+  JalaliDateStringSchema,
+  type JalaliDateString,
+} from "./schemas/jalali-date.schema";
 
 export {
   assertFiscalDateWritable,
